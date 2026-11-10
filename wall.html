@@ -68,10 +68,51 @@ h1{margin:0;font-family:var(--f-serif);font-weight:700;font-size:clamp(1.6rem,2.
 .card{position:relative}
 .card .rank.inline{position:static;font-size:.95rem;padding:2px 10px;flex:none}
 .card .top .who{flex:1;min-width:0}
+.card .who .by{display:block;font-family:var(--f-sans);font-weight:500;font-size:.75rem;color:var(--muted)}
 .card .el{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
 .grid.race{columns:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;align-items:start}
 .grid.race .card{margin:0}
 .bn-to{margin:10px 0 0;font-size:clamp(.95rem,1.2vw,1.2rem);color:var(--grid);font-weight:700}
+.roster{background:#fff;border:1.5px solid var(--grid);display:flex;flex-direction:column;min-height:180px;flex:1 1 auto}
+.rsum{display:flex;flex-direction:column;gap:2px;padding:8px 12px;border-bottom:1.5px solid var(--grid-soft);font-size:.8rem;color:var(--muted)}
+.rsum b{color:var(--ink);font-variant-numeric:tabular-nums}
+.rgrid{display:grid;grid-template-columns:1fr 3.2em 3.2em;align-items:center}
+.rhead{padding:6px 12px;font-size:.75rem;color:var(--muted);font-weight:700;border-bottom:1px solid var(--grid-soft)}
+.rhead span:not(:first-child),.rrow span:not(:first-child){text-align:center}
+.rlist{list-style:none;margin:0;padding:0;overflow:auto;flex:1 1 0;min-height:0}
+.rrow{padding:5px 12px;font-size:.9rem;border-bottom:1px dashed var(--grid-soft)}
+.rrow .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rrow .y{color:var(--grid);font-weight:900}
+.rrow .n{color:#C5CCC9}
+.rrow .p{color:var(--ink);font-size:.8rem;font-variant-numeric:tabular-nums}
+.rrow.full{background:#F2FAF5}
+.rempty{padding:10px 12px;font-size:.8rem;color:var(--muted)}
+body.started .titlebox{display:none}
+body.started #qrcode{max-width:130px}
+body.started .qr{flex-direction:row;justify-content:center}
+body.started .qr p{text-align:left}
+aside{gap:16px}
+.boardview{display:flex;flex-direction:column;gap:28px}
+.podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:end;max-width:1100px;margin:0 auto;width:100%}
+.pod{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.pod .medal{font-family:var(--f-serif);font-weight:900;font-size:1.2rem;color:#fff;padding:4px 16px;background:var(--ink)}
+.pod.p1 .medal{background:#C9A227}.pod.p2 .medal{background:#8E9AA3}.pod.p3 .medal{background:#A8714A}
+.pod .pname{font-family:var(--f-serif);font-weight:900;font-size:clamp(1.6rem,2.6vw,2.8rem);line-height:1.2;min-height:1.2em;overflow-wrap:anywhere}
+.pod.p1 .pname{font-size:clamp(2rem,3.4vw,3.6rem)}
+.pod .ppts{font-size:clamp(1.1rem,1.6vw,1.6rem);font-weight:700;color:var(--grid);min-height:1.4em;font-variant-numeric:tabular-nums}
+.pod .pmem{font-size:.95rem;color:var(--muted);min-height:1.5em}
+.pod .block{width:100%;background:#fff;border:1.5px solid var(--grid);border-bottom:0}
+.pod.p1 .block{height:220px;background:var(--grid-soft)}.pod.p2 .block{height:150px}.pod.p3 .block{height:100px}
+.pod:not(.shown) .pname{color:#C5CCC9}
+.pod.shown .pname,.pod.shown .ppts{animation:pop .7s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes pop{from{opacity:0;transform:scale(.6) translateY(16px)}to{opacity:1;transform:none}}
+.restwrap{max-width:720px;margin:0 auto;width:100%;background:rgba(255,255,255,.88);border:1.5px solid var(--grid);padding:12px 18px}
+.restt{margin:0 0 6px;font-size:.85rem;color:var(--muted);font-weight:700}
+.rest{list-style:none;margin:0;padding:0;columns:2;column-gap:28px}
+.rest li{display:grid;grid-template-columns:2.2em 1fr auto;gap:8px;padding:5px 0;border-bottom:1px dashed var(--grid-soft);break-inside:avoid;font-size:1.05rem}
+.rest .rk{font-family:var(--f-serif);font-weight:900;color:var(--muted);font-variant-numeric:tabular-nums}
+.rest .rp{font-variant-numeric:tabular-nums;color:var(--grid);font-weight:700}
+@media (prefers-reduced-motion:reduce){.pod.shown .pname,.pod.shown .ppts{animation:none}}
 .status{font-size:.8rem;color:var(--muted);margin-top:auto}
 main{overflow:auto;padding:28px;min-width:0}
 .grid{columns:300px;column-gap:20px}
@@ -120,6 +161,11 @@ main{overflow:auto;padding:28px;min-width:0}
       <p class="hostmsg" id="hostmsg" hidden></p>
       <label class="allbox" for="showAll"><input type="checkbox" id="showAll">顯示所有題目的投稿</label>
     </div>
+    <section class="roster" id="rosterBox" aria-label="這一題各隊進度">
+      <div class="rsum"><span id="rTitle">這一題進度</span><span>答題 <b id="rA">0</b> 隊．感謝 <b id="rT">0</b> 人．共 <b id="rN">0</b> 隊</span></div>
+      <div class="rgrid rhead"><span>隊伍</span><span>答題</span><span>感謝</span></div>
+      <ol class="rlist" id="roster"></ol>
+    </section>
     <div class="status" id="status">連線中…</div>
   </aside>
   <main>
@@ -130,6 +176,10 @@ main{overflow:auto;padding:28px;min-width:0}
     </section>
     <div class="empty" id="empty">這一題還沒有人送出<small>打開街景開始找吧</small></div>
     <div class="grid" id="grid"></div>
+    <section class="boardview" id="boardView" hidden aria-live="polite">
+      <div class="podium" id="podium"></div>
+      <div id="restWrap" class="restwrap"><p class="restt">第四名以後</p><ol class="rest" id="rest"></ol></div>
+    </section>
   </main>
 </div>
 
@@ -168,12 +218,16 @@ let items = [], current = 0, phase = "find", phaseAt = 0, clockOffset = 0, showA
 const imgCache = {}, cards = {};
 const LABELS = (()=>{ let k=0; return MS.map(m=> m.practice ? "試玩題" : "第"+(NUM[k++]||k)+"題"); })();
 const numText = n => LABELS[n-1] || ("第"+n+"題");
-let scored = [];   // 有正確答案、要排名的題目代號（從 Code.gs 來）
+let scored = [], teams = [], teamsSig = "";   // 有正確答案、要排名的題目代號（從 Code.gs 來）
 const fmt = sec => Math.floor(sec/60) + ":" + String(sec%60).padStart(2,"0");
 /* 步驟：0 尚未開始；第 n 題搶答 = 2n-1；第 n 題寫謝謝 = 2n */
 const stepOf = (c,p) => c <= 0 ? 0 : (p === "thanks" ? 2*c : 2*c-1);
 const stateOf = st => st <= 0 ? {current:0, phase:"find"} : {current:Math.ceil(st/2), phase: st % 2 ? "find" : "thanks"};
-const MAXSTEP = 2*MS.length;
+const BOARD = MS.length + 1;            // 題目全部結束後的「排行榜」
+const MAXSTEP = 2*MS.length + 1;
+const POINTS = Array.isArray(window.POINTS) ? window.POINTS : [5,4,3];
+const CORRECT_POINTS = Number(window.CORRECT_POINTS ?? 2);
+let reveal = 0;                          // 排行榜揭曉到第幾名（0 = 還沒揭曉，3 = 第一名也揭曉了）
 
 function makeCard(it, rank, elapsed){
   const c = document.createElement("article"); c.className = "card" + (rank && rank <= 3 ? " r"+rank : "");
@@ -186,7 +240,9 @@ function makeCard(it, rank, elapsed){
   }
   const tx = document.createElement("div"); tx.className="tx";
   const top = document.createElement("div"); top.className="top";
-  const w = document.createElement("span"); w.className="who"; w.textContent = it.name || "無名小卒";
+  const w = document.createElement("span"); w.className="who";
+  if(it.type === "thanks"){ w.textContent = it.name || "無名小卒"; if(it.team){ const tg=document.createElement("small"); tg.className="by"; tg.textContent=it.team; w.append(" ", tg); } }
+  else { w.textContent = it.team || it.name || "無名小隊"; if(it.team && it.name){ const by=document.createElement("small"); by.className="by"; by.textContent=it.name+" 答"; w.append(" ", by); } }
   const mi = Number(it.mission)-1;
   const t = document.createElement("span"); t.className="tag";
   if(elapsed != null){ t.className = "el"; t.textContent = "用時 " + fmt(elapsed); }
@@ -207,7 +263,12 @@ function makeCard(it, rank, elapsed){
 function renderBanner(){
   const no = $("bnNo"); no.replaceChildren();
   const ph = $("bnPhase"), tm = $("bnTimer");
-  if(current === 0){
+  if(current >= BOARD){
+    $("bnTitle").textContent = "各隊總排名";
+    $("bnQ").textContent = "每題答對：第 1 名 " + POINTS[0] + " 分、第 2 名 " + POINTS[1] + " 分、第 3 名 " + POINTS[2] + " 分，其他答對 " + CORRECT_POINTS + " 分。";
+    $("bnTo").textContent = ""; ph.hidden = false; ph.textContent = "排行榜"; ph.classList.add("thx"); tm.hidden = true;
+    $("curLabel").textContent = "目前：排行榜（已揭曉 " + reveal + " / 3）";
+  }else if(current === 0){
     $("bnTitle").textContent = "準備開始";
     $("bnQ").textContent = "掃左邊的 QR code，先填好名字，等主持人開始第壹題。";
     $("bnTo").textContent = ""; ph.hidden = true; tm.hidden = true;
@@ -231,7 +292,9 @@ function renderBanner(){
   $("banner").classList.toggle("timed", !tm.hidden);
   const st = stepOf(current, phase);
   $("prev").disabled = st <= 0;
-  $("next").disabled = st >= MAXSTEP;
+  $("next").disabled = st >= MAXSTEP && reveal >= 3;
+  if(current >= BOARD){ $("next").textContent = reveal >= 3 ? "全部結束" : "揭曉第" + ["三","二","一"][reveal] + "名 ▶"; return; }
+  if(st === MAXSTEP - 1){ $("next").textContent = "公布排行榜 ▶"; return; }
   const nx = stateOf(st+1);
   $("next").textContent = st >= MAXSTEP ? "全部結束" : (nx.phase === "thanks" ? "結束搶答，寫謝謝 ▶" : (st === 0 ? "開始" : "下一題：") + numText(nx.current) + " ▶");
   tick();
@@ -245,8 +308,93 @@ function tick(){
 }
 setInterval(tick, 1000);
 
+function renderRoster(){
+  const ol = $("roster"); ol.replaceChildren();
+  /* 隊伍：先用後端的隊伍名單，再補上有投稿但不在名單裡的 */
+  const tmap = {}, order = [];
+  teams.forEach(t=>{ tmap[t.code] = {code:t.code, team:t.team, members:t.members||[]}; order.push(t.code); });
+  items.forEach(it=>{ const k = it.code || ("名:"+(it.name||"")); if(!tmap[k]){ tmap[k] = {code:k, team: it.team || it.name || "?", members:[]}; order.push(k); } });
+  const m = MS[current-1] || {}, isScored = scored.includes(m.id);
+  let nA = 0, nT = 0, nP = 0;
+  const rows = order.map(k=>{
+    const t = tmap[k];
+    const mine = items.filter(it=>(it.code || ("名:"+(it.name||""))) === k && Number(it.mission)===current);
+    const a = mine.some(it=>it.type!=="thanks" && (!isScored || it.correct==="O"));
+    const thx = new Set(mine.filter(it=>it.type==="thanks").map(it=>(it.name||"").trim()));
+    const size = Math.max(t.members.length, thx.size);
+    if(a) nA++; nT += thx.size; nP += size;
+    return {name:t.team, a, t:thx.size, size, members:t.members};
+  });
+  rows.sort((x,y)=>((x.a?1:0)+(x.t>=x.size&&x.size?1:0))-((y.a?1:0)+(y.t>=y.size&&y.size?1:0)));
+  rows.forEach(r=>{
+    const full = r.a && r.size && r.t >= r.size;
+    const li = document.createElement("li"); li.className = "rgrid rrow" + (full ? " full" : "");
+    const n = document.createElement("span"); n.className="nm"; n.textContent = r.name; n.title = r.members.join("、");
+    const a = document.createElement("span"); a.className = r.a?"y":"n"; a.textContent = r.a?"✓":"—"; a.setAttribute("aria-label", r.a?"已答題":"未答題");
+    const t = document.createElement("span"); t.className = full || (r.size && r.t>=r.size) ? "y" : (r.t ? "p" : "n");
+    t.textContent = r.size ? (r.t >= r.size ? "✓" : r.t + "/" + r.size) : (r.t ? r.t : "—");
+    t.setAttribute("aria-label", "已送感謝 " + r.t + " 人，共 " + r.size + " 人");
+    li.append(n,a,t); ol.appendChild(li);
+  });
+  if(!rows.length){ const li=document.createElement("li"); li.className="rempty"; li.textContent="還沒有隊伍"; ol.appendChild(li); }
+  $("rTitle").textContent = current ? numText(current) + "各隊進度" + (isScored ? "．答對才打勾" : "") : "各隊進度";
+  $("rA").textContent = nA; $("rT").textContent = nT + "/" + nP; $("rN").textContent = rows.length;
+}
+
+function computeBoard(){
+  const tmap = {}, order = [];
+  teams.forEach(t=>{ tmap[t.code] = {key:t.code, team:t.team, members:t.members||[], points:0, correct:0, firsts:0, rankSum:0, tsSum:0}; order.push(t.code); });
+  const keyOf = it => it.code || ("名:"+(it.name||""));
+  items.forEach(it=>{ const k = keyOf(it); if(!tmap[k]){ tmap[k] = {key:k, team:it.team||it.name||"?", members:[], points:0, correct:0, firsts:0, rankSum:0, tsSum:0}; order.push(k); } });
+  MS.forEach((m,i)=>{
+    if(m.practice || !scored.includes(m.id)) return;
+    const seen = {};
+    items.filter(it=>it.type!=="thanks" && Number(it.mission)===i+1 && it.correct==="O")
+      .sort((a,b)=>(a.ts||0)-(b.ts||0))
+      .forEach(it=>{
+        const k = keyOf(it); if(seen[k]) return; seen[k] = 1;
+        const r = Object.keys(seen).length, t = tmap[k];
+        t.points += r <= POINTS.length ? POINTS[r-1] : CORRECT_POINTS;
+        t.correct++; t.rankSum += r; t.tsSum += (it.ts||0); if(r === 1) t.firsts++;
+      });
+  });
+  return order.map(k=>tmap[k]).sort((a,b)=> b.points-a.points || b.firsts-a.firsts || a.rankSum-b.rankSum || b.correct-a.correct || a.tsSum-b.tsSum);
+}
+function renderBoard(){
+  const board = computeBoard();
+  const pod = $("podium"); pod.replaceChildren();
+  [1,0,2].forEach(idx=>{   /* 擺法：第二名｜第一名｜第三名 */
+    const t = board[idx], place = idx+1;
+    const shown = reveal >= 4 - place;        // 第三名先揭曉
+    const d = document.createElement("div"); d.className = "pod p"+place + (shown ? " shown" : "");
+    const medal = document.createElement("div"); medal.className = "medal"; medal.textContent = "第 " + ["一","二","三"][idx] + " 名";
+    const nm = document.createElement("div"); nm.className = "pname";
+    const pts = document.createElement("div"); pts.className = "ppts";
+    const mem = document.createElement("div"); mem.className = "pmem";
+    if(!t){ nm.textContent = "從缺"; }
+    else if(shown){ nm.textContent = t.team; pts.textContent = t.points + " 分"; mem.textContent = (t.members.join("、") || "") + "．答對 " + t.correct + " 題"; }
+    else { nm.textContent = "？"; }
+    const block = document.createElement("div"); block.className = "block";
+    d.append(medal, nm, pts, mem, block); pod.appendChild(d);
+  });
+  const rest = $("rest"); rest.replaceChildren();
+  board.slice(3).forEach((t,i)=>{
+    const li = document.createElement("li");
+    const r = document.createElement("span"); r.className="rk"; r.textContent = (i+4);
+    const n = document.createElement("span"); n.className="rn"; n.textContent = t.team;
+    const p = document.createElement("span"); p.className="rp"; p.textContent = t.points + " 分";
+    li.append(r,n,p); rest.appendChild(li);
+  });
+  $("restWrap").hidden = board.length <= 3;
+}
+
 function render(){
   renderBanner();
+  const onBoard = current >= BOARD;
+  $("boardView").hidden = !onBoard; $("grid").hidden = onBoard; $("rosterBox").hidden = onBoard;
+  if(onBoard){ renderBoard(); $("empty").hidden = true; $("total").textContent = computeBoard().length; $("countLabel").textContent = "隊參加"; document.body.classList.add("started"); return; }
+  renderRoster();
+  document.body.classList.toggle("started", current > 0);
   const grid = $("grid");
   let shown, label;
   if(showAll){
@@ -258,9 +406,9 @@ function render(){
     let list = items.filter(it=>it.type!=="thanks" && Number(it.mission)===current).sort((a,b)=>(a.ts||0)-(b.ts||0));
     if(isScored){
       shown = list.filter(it=>it.correct==="O")
-        .filter(it=>{ const k=(it.name||"").trim(); if(seen[k]) return false; seen[k]=1; return true; })
+        .filter(it=>{ const k=(it.code||it.name||"").trim(); if(seen[k]) return false; seen[k]=1; return true; })
         .map((it,i)=>({it, rank:i+1, elapsed: el(it)}));
-      label = "組答對．這一題";
+      label = "隊答對．這一題";
     }else{
       shown = list.slice().reverse().map(it=>({it, elapsed: el(it)}));
       label = "則投稿．這一題";
@@ -300,10 +448,11 @@ async function pump(){
 async function poll(){
   const st = $("status");
   try{
-    let list, st0;
+    let list, st0, teamsChanged = false;
     if(!URL_){
       list = store.get("thanks-demo",[]).map(x=>Object.assign({},x,{img:x.image||""}));
       st0 = store.get("thanks-state",{current:0,phase:"find",at:0});
+      { const tm = store.get("thanks-teams",{}); const arr = Object.values(tm); const ts = JSON.stringify(arr); if(ts !== teamsSig){ teamsSig = ts; teams = arr; teamsChanged = true; } }
       st.textContent = "試玩模式：只顯示這台裝置送出的內容";
     }else{
       const r = await fetch(URL_+"?list=1&t="+Date.now()); const j = await r.json();
@@ -311,6 +460,7 @@ async function poll(){
       list = j.items; st0 = {current:j.current, phase:j.phase, at:j.at};
       if(j.now) clockOffset = j.now - Date.now();
       if(Array.isArray(j.scored)) scored = j.scored;
+      if(Array.isArray(j.teams)){ const ts = JSON.stringify(j.teams); if(ts !== teamsSig){ teamsSig = ts; teams = j.teams; teamsChanged = true; } }
       st.textContent = "已連線．"+new Date().toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit",second:"2-digit"})+" 更新";
     }
     list.forEach(x=>{ x.key = x.id || ("n"+x.n); if(!x.type) x.type = (x.thanks && !x.answer && !x.img) ? "thanks" : "answer"; });
@@ -319,7 +469,7 @@ async function poll(){
     items = list;
     const nc = Number(st0.current)||0, np = st0.phase === "thanks" ? "thanks" : "find", na = Number(st0.at)||0;
     if(!pending && (nc !== current || np !== phase || na !== phaseAt)){ current = nc; phase = np; phaseAt = na; render(); }
-    else if(changed) render();
+    else if(changed || teamsChanged) render();
   }catch(e){
     st.textContent = "連線失敗，自動重試中…";
   }
@@ -349,15 +499,24 @@ async function setStep(st){
   }catch(e){ undo(); hostMsg("網路不穩，換題失敗，請再按一次。"); }
   pending = false;
 }
-$("prev").addEventListener("click",()=>setStep(stepOf(current,phase)-1));
-$("next").addEventListener("click",()=>setStep(stepOf(current,phase)+1));
+function goNext(){
+  if(current >= BOARD){ if(reveal < 3){ reveal++; render(); } return; }
+  if(stepOf(current,phase) + 1 === MAXSTEP) reveal = 0;
+  setStep(stepOf(current,phase)+1);
+}
+function goPrev(){
+  if(current >= BOARD && reveal > 0){ reveal--; render(); return; }
+  setStep(stepOf(current,phase)-1);
+}
+$("prev").addEventListener("click",goPrev);
+$("next").addEventListener("click",goNext);
 $("savekey").addEventListener("click",()=>{ const k=$("hostkey").value.trim(); if(!k) return; store.set("thanks-hostkey",k); $("hostkey").value=""; $("keybox").hidden=true; hostMsg(""); });
 $("hostkey").addEventListener("keydown",e=>{ if(e.key==="Enter") $("savekey").click(); });
 $("showAll").addEventListener("change",e=>{ showAll = e.target.checked; render(); });
 document.addEventListener("keydown",e=>{
   if(e.target.closest("input,textarea")) return;
-  if(["ArrowRight","PageDown"].includes(e.key)){ e.preventDefault(); setStep(stepOf(current,phase)+1); }
-  if(["ArrowLeft","PageUp"].includes(e.key)){ e.preventDefault(); setStep(stepOf(current,phase)-1); }
+  if(["ArrowRight","PageDown"].includes(e.key)){ e.preventDefault(); goNext(); }
+  if(["ArrowLeft","PageUp"].includes(e.key)){ e.preventDefault(); goPrev(); }
 });
 
 render(); poll(); setInterval(poll, URL_?5000:1500);

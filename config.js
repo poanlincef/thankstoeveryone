@@ -11,6 +11,12 @@ window.SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxS39XBlIcIw9IC3QJX
 /* 每題搶答結束後，給大家寫謝謝的秒數（倒數計時用，時間到後還是可以送）。 */
 window.THANKS_SECONDS = 60;
 
+/* 排行榜計分：每一題（有正確答案的題目）答對的隊伍，照答對先後給分。
+   POINTS 是第 1、2、3 名的分數；第 4 名以後答對的都拿 CORRECT_POINTS 分。
+   同分時，依序比：拿過幾次第一名、各題名次加總、答對時間加總（越快越前面）。 */
+window.POINTS = [5, 4, 3];
+window.CORRECT_POINTS = 2;
+
 /* 所有題目的「打開街景」都從同一個起點出發，學生要自己找到地方。
    想改起點，改這裡的座標（緯度,經度）就好。 */
 var START_MAP = "https://www.google.com/maps/@?api=1&map_action=map&center=22.994252%2C120.217602&zoom=17";

@@ -100,6 +100,26 @@ button:focus-visible,a:focus-visible,.upload:focus-within{outline:3px solid var(
 .thx.soon{border-top-style:dotted}
 .thx.soon .soon-text{margin:0;font-size:.88rem;color:var(--muted)}
 .btn.send.thx-send{background:var(--ink)}
+.team{background:var(--card);border:1.5px solid var(--grid);padding:16px}
+.tsetup,.tform{display:flex;flex-direction:column;gap:12px}
+.tlead{margin:0;font-family:var(--f-serif);font-weight:700;font-size:1.05rem}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--grid)}
+.seg button{appearance:none;border:0;background:var(--card);color:var(--ink);font:700 1rem var(--f-sans);padding:10px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--grid);color:#fff}
+#jCode{font-size:1.4rem;letter-spacing:.4em;font-variant-numeric:tabular-nums}
+.tcard{display:flex;flex-direction:column;gap:8px}
+.tc-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.tc-name{font-family:var(--f-serif);font-weight:900;font-size:1.4rem}
+.tc-role{font-size:.8rem;color:#fff;background:var(--ink);padding:2px 10px;white-space:nowrap}
+.tc-code{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;font-size:.9rem}
+.tc-code b{font-family:var(--f-serif);font-size:2rem;color:var(--grid);letter-spacing:.2em;font-variant-numeric:tabular-nums}
+.tc-code small{color:var(--muted);font-size:.8rem}
+.tc-mem{margin:0;font-size:.9rem;color:var(--muted)}
+.linkbtn{align-self:flex-start;appearance:none;border:0;background:none;color:var(--muted);font:500 .85rem var(--f-sans);text-decoration:underline;cursor:pointer;padding:4px 0}
+.teamdone{margin:0;background:#F2FAF5;border-left:3px solid var(--grid);padding:10px 12px;font-size:.95rem}
+.find.tdone > :not(.teamdone):not(.again){display:none}
+.find .again{display:none}
+.find.tdone.can-again .again{display:inline-block}
 .msg{margin:0;font-size:.88rem}
 .msg.err{color:var(--warn)}
 .msg.ok{color:var(--done)}
@@ -118,15 +138,38 @@ footer{text-align:center;font-size:.8rem;color:var(--muted);font-family:var(--f-
 
   <section class="how" aria-label="怎麼玩">
     <div><b>一　開街景</b>按每一題的「打開街景」，在 Google 地圖裡走到題目的地方。</div>
-    <div><b>二　搶答</b>找到答案或那個人就截圖送出，越快送出排名越前面。</div>
-    <div><b>三　說謝謝</b>搶答結束後有一分鐘，寫一句謝謝給你想到的人。題目由主持人一題一題開放。</div>
+    <div><b>二　搶答</b>同隊誰先找到都可以送出，答對越快，隊伍排名越前面。</div>
+    <div><b>三　說謝謝</b>隊伍答對後，每個人都可以寫一句謝謝；搶答結束後再給大家一分鐘。</div>
   </section>
 
   <p class="demo" id="demo" hidden>試玩模式：還沒接上收件的試算表，送出的內容只會存在這支手機。</p>
 
-  <label class="field" for="who">你的名字或小隊名
-    <input id="who" type="text" maxlength="20" placeholder="例：南一中阿布、第三小隊" autocomplete="nickname">
-  </label>
+  <section class="team" id="teamBox" aria-label="隊伍">
+    <div id="teamSetup" class="tsetup">
+      <p class="tlead">先組隊：一位當組長建立隊伍，其他人用隊伍代碼加入。</p>
+      <div class="seg" role="group" aria-label="選擇身分">
+        <button type="button" id="roleLeader" aria-pressed="true">我是組長</button>
+        <button type="button" id="roleMember" aria-pressed="false">我是組員</button>
+      </div>
+      <div id="leaderForm" class="tform">
+        <label class="field" for="tName">隊名<input id="tName" type="text" maxlength="12" placeholder="例：南一中迷路隊"></label>
+        <label class="field" for="lName">你的名字<input id="lName" type="text" maxlength="12" placeholder="例：阿布" autocomplete="nickname"></label>
+        <button type="button" class="btn send" id="createBtn">建立隊伍</button>
+      </div>
+      <div id="memberForm" class="tform" hidden>
+        <label class="field" for="jCode">隊伍代碼<input id="jCode" type="text" inputmode="numeric" maxlength="4" placeholder="問組長，4 位數字"></label>
+        <label class="field" for="mName">你的名字<input id="mName" type="text" maxlength="12" placeholder="例：小美" autocomplete="nickname"></label>
+        <button type="button" class="btn send" id="joinBtn">加入隊伍</button>
+      </div>
+      <p class="msg" id="teamMsg" role="status" aria-live="polite"></p>
+    </div>
+    <div id="teamCard" class="tcard" hidden>
+      <div class="tc-top"><span class="tc-name" id="tcName"></span><span class="tc-role" id="tcRole"></span></div>
+      <div class="tc-code">隊伍代碼<b id="tcCode"></b><small>組員輸入這組數字加入</small></div>
+      <p class="tc-mem" id="tcMem"></p>
+      <button type="button" class="linkbtn" id="leaveBtn">不是這隊？換隊伍</button>
+    </div>
+  </section>
 
   <div id="missions">
     <div class="wait" id="wait" role="status" aria-live="polite">
@@ -159,12 +202,14 @@ footer{text-align:center;font-size:.8rem;color:var(--muted);font-family:var(--f-
           <span class="uptext"><span class="uplabel">附上街景截圖</span><span class="need"></span></span>
         </label>
         <button class="btn send ans-send" type="button">搶答送出</button>
+        <p class="teamdone" hidden></p>
+        <button type="button" class="linkbtn again">我也想送一份</button>
         <p class="msg ans-msg" role="status" aria-live="polite"></p>
       </div>
       <p class="locked" hidden>搶答時間結束了。</p>
       <div class="thx">
         <p class="thx-lead"></p>
-        <p class="soon-text" hidden>搶答結束後，這裡會打開讓你寫一句謝謝。</p>
+        <p class="soon-text" hidden>你們隊送出答案後，這裡就會打開，每個人都可以寫一句謝謝。</p>
         <div class="thx-open">
           <div class="timer" hidden><span>寫謝謝時間</span><b class="tleft">1:00</b></div>
           <label class="field thx-field"><span class="thx-label">寫一句謝謝給<b class="thx-to"></b></span>
@@ -203,11 +248,72 @@ const store = {
   get(k,d){ try{ const v = localStorage.getItem(k); return v==null ? d : JSON.parse(v); }catch(e){ return d; } },
   set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 };
-const who = document.getElementById("who");
-who.value = store.get("thanks-name","");
-who.addEventListener("input",()=>store.set("thanks-name",who.value.trim()));
+/* ---- 隊伍 ---- */
+const $id = x => document.getElementById(x);
+let me = store.get("thanks-team", null);   // {code, team, name, role, members}
+let teamDone = {};                           // 題號 → {by, correct}，隊上誰先送出
+function showTeam(){
+  $id("teamSetup").hidden = !!me; $id("teamCard").hidden = !me;
+  if(!me) return;
+  $id("tcName").textContent = me.team;
+  $id("tcRole").textContent = (me.role==="leader"?"組長．":"組員．") + me.name;
+  $id("tcCode").textContent = me.code;
+  $id("tcMem").textContent = me.members && me.members.length ? "隊員：" + me.members.join("、") : "";
+}
+function setRole(r){
+  $id("roleLeader").setAttribute("aria-pressed", r==="leader");
+  $id("roleMember").setAttribute("aria-pressed", r==="member");
+  $id("leaderForm").hidden = r!=="leader"; $id("memberForm").hidden = r!=="member";
+  $id("teamMsg").textContent = "";
+}
+$id("roleLeader").addEventListener("click",()=>setRole("leader"));
+$id("roleMember").addEventListener("click",()=>setRole("member"));
+function teamErr(t){ const m=$id("teamMsg"); m.className="msg err"; m.textContent=t; }
+async function teamCall(body){
+  if(!URL_){
+    const teams = store.get("thanks-teams",{});
+    if(body.action==="createTeam"){
+      let code; do{ code = String(1000+Math.floor(Math.random()*9000)); }while(teams[code]);
+      teams[code] = {code, team:body.team, members:[body.name]}; store.set("thanks-teams",teams);
+      return Object.assign({ok:true}, teams[code]);
+    }
+    const t = teams[body.code]; if(!t) return {ok:false, error:"no team"};
+    if(!t.members.includes(body.name)) t.members.push(body.name); store.set("thanks-teams",teams);
+    return Object.assign({ok:true}, t);
+  }
+  const r = await fetch(URL_,{method:"POST",body:JSON.stringify(body)}); return r.json();
+}
+$id("createBtn").addEventListener("click", async ()=>{
+  const team = $id("tName").value.trim(), name = $id("lName").value.trim();
+  if(!team) return teamErr("填一個隊名。"), $id("tName").focus();
+  if(!name) return teamErr("填你的名字。"), $id("lName").focus();
+  const b = $id("createBtn"); b.disabled = true; b.textContent = "建立中…";
+  try{
+    const j = await teamCall({action:"createTeam", team, name});
+    if(!j.ok) throw 0;
+    me = {code:j.code, team:j.team, name, role:"leader", members:j.members}; store.set("thanks-team",me); resetDone(); teamDone = {}; showTeam(); refreshCards(false); poll();
+  }catch(e){ teamErr("沒有建立成功，請確認網路後再按一次。"); }
+  b.disabled = false; b.textContent = "建立隊伍";
+});
+$id("joinBtn").addEventListener("click", async ()=>{
+  const code = $id("jCode").value.replace(/\D/g,""), name = $id("mName").value.trim();
+  if(code.length !== 4) return teamErr("隊伍代碼是 4 位數字，問你的組長。"), $id("jCode").focus();
+  if(!name) return teamErr("填你的名字。"), $id("mName").focus();
+  const b = $id("joinBtn"); b.disabled = true; b.textContent = "加入中…";
+  try{
+    const j = await teamCall({action:"joinTeam", code, name});
+    if(!j.ok){ teamErr(j.error==="no team" ? "找不到這個代碼，再跟組長確認一次。" : "沒有加入成功，請再按一次。"); }
+    else { me = {code:j.code, team:j.team, name, role:"member", members:j.members}; store.set("thanks-team",me); resetDone(); teamDone = {}; showTeam(); refreshCards(false); poll(); }
+  }catch(e){ teamErr("沒有加入成功，請確認網路後再按一次。"); }
+  b.disabled = false; b.textContent = "加入隊伍";
+});
+$id("leaveBtn").addEventListener("click",()=>{ me = null; teamDone = {}; store.set("thanks-team",null); resetDone(); showTeam(); setRole("member"); if(current>=0) refreshCards(false); });
+showTeam();
 if(!URL_) document.getElementById("demo").hidden = false;
-const doneA = store.get("thanks-doneA",{}), doneT = store.get("thanks-doneT",{});
+/* 每支手機自己記得送過哪些題（依隊伍分開記，換隊伍就重來） */
+const doneKey = k => "thanks2-" + k + "-" + ((store.get("thanks-team",null)||{}).code||"none");
+let doneA = store.get(doneKey("doneA"),{}), doneT = store.get(doneKey("doneT"),{});
+function resetDone(){ doneA = store.get(doneKey("doneA"),{}); doneT = store.get(doneKey("doneT"),{}); }
 
 function uid(){ return (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+Math.random().toString(36).slice(2)); }
 function compress(file){
@@ -237,7 +343,7 @@ async function send(payload){
 }
 
 const box = document.getElementById("missions"), tpl = document.getElementById("tpl");
-const cards = [];
+const cards = [], allowAgain = {};
 MS.forEach((m,i)=>{
   const el = tpl.content.firstElementChild.cloneNode(true);
   const $ = q => el.querySelector(q);
@@ -276,9 +382,8 @@ MS.forEach((m,i)=>{
   });
 
   function needName(msg){
-    const name = who.value.trim();
-    if(!name){ msg.className = msg.className.replace(/ (err|ok)/g,"")+" err"; msg.textContent = "先在最上面填你的名字或小隊名。"; who.focus(); }
-    return name;
+    if(!me){ msg.className = msg.className.replace(/ (err|ok)/g,"")+" err"; msg.textContent = "先在最上面建立或加入隊伍。"; $id("teamBox").scrollIntoView({behavior:"smooth",block:"start"}); return ""; }
+    return me.name;
   }
   function setChip(){
     const n = i+1;
@@ -297,15 +402,18 @@ MS.forEach((m,i)=>{
     if(askAnswer && !answer && !image){ msg.textContent = "寫下答案或附上截圖再送出。"; ta.focus(); return; }
     btn.disabled = true; btn.textContent = "送出中…"; msg.className = "msg ans-msg"; msg.textContent = "";
     try{
-      const j = await send({type:"answer", id:uid(), name, mission:i+1, mid:m.id||"", title:m.title||"", answer, image});
+      const j = await send({type:"answer", id:uid(), name, team:me.team, code:me.code, mission:i+1, mid:m.id||"", title:m.title||"", answer, image});
       if(j.correct === "X"){
         msg.className = "msg ans-msg err"; msg.textContent = "答案好像不太對，再找找看，改好可以再送一次。";
         btn.textContent = "搶答送出";
       }else{
-        doneA[i] = j.correct === "O" ? "O" : true; store.set("thanks-doneA",doneA); setChip();
+        doneA[i] = j.correct === "O" ? "O" : true; store.set(doneKey("doneA"),doneA);
+        if(!teamDone[i+1]) teamDone[i+1] = {by:name, correct:j.correct||""};
+        setChip();
         msg.className = "msg ans-msg ok";
         msg.textContent = j.correct === "O" ? "答對了！看看大螢幕上的排名。" : "送出了！抬頭看看大螢幕。";
         btn.textContent = "修改後再送一次";
+        openThx();
       }
     }catch(e){ msg.className = "msg ans-msg err"; msg.textContent = "沒有送出去，請確認網路後再按一次。"; btn.textContent = "搶答送出"; }
     btn.disabled = false;
@@ -318,14 +426,16 @@ MS.forEach((m,i)=>{
     if(!thanks){ msg.className = "msg thx-msg err"; msg.textContent = "寫一句謝謝再送出。"; tta.focus(); return; }
     btn.disabled = true; btn.textContent = "送出中…"; msg.className = "msg thx-msg"; msg.textContent = "";
     try{
-      await send({type:"thanks", id:uid(), name, mission:i+1, title:m.title||"", thanks, thanksTo:m.thanksTo||""});
-      doneT[i] = true; store.set("thanks-doneT",doneT); setChip();
+      await send({type:"thanks", id:uid(), name, team:me.team, code:me.code, mission:i+1, title:m.title||"", thanks, thanksTo:m.thanksTo||""});
+      doneT[i] = true; store.set(doneKey("doneT"),doneT); setChip();
       msg.className = "msg thx-msg ok"; msg.textContent = "謝謝你的謝謝，已經送上大螢幕。";
       btn.textContent = "再寫一句";
     }catch(e){ msg.className = "msg thx-msg err"; msg.textContent = "沒有送出去，請確認網路後再按一次。"; btn.textContent = "送出感謝"; }
     btn.disabled = false;
   });
 
+  function openThx(){ $(".thx-open").hidden = false; $(".soon-text").hidden = true; $(".thx").classList.remove("soon"); }
+  $(".again").addEventListener("click",()=>{ $(".find").classList.remove("tdone"); allowAgain[i] = true; });
   const head = $(".mhead");
   head.addEventListener("click",()=>{ const c = !el.classList.contains("collapsed"); el.classList.toggle("collapsed",c); head.setAttribute("aria-expanded",!c); });
   el.hidden = true;
@@ -336,37 +446,17 @@ MS.forEach((m,i)=>{
 /* ---- 主持人控制：目前題號 current、階段 phase（find 搶答 / thanks 寫謝謝） ---- */
 let current = -1, phase = "find", phaseAt = 0, clockOffset = 0;
 function applyState(cur, ph, at){
-  cur = Math.max(0, Math.min(MS.length, Number(cur)||0));
+  cur = Math.max(0, Math.min(MS.length + 1, Number(cur)||0));   // MS.length+1 = 排行榜
   ph = ph === "thanks" ? "thanks" : "find";
   if(cur === current && ph === phase && at === phaseAt) return;
   const first = current === -1, moved = cur !== current || ph !== phase;
   current = cur; phase = ph; phaseAt = Number(at)||0;
-  cards.forEach((c,i)=>{
-    const n = i+1, live = n === cur, past = n < cur;
-    c.el.hidden = n > cur;
-    c.el.classList.toggle("live", live);
-    c.el.classList.toggle("past", past);
-    c.el.style.order = live ? 0 : (cur - n) + 1;
-    const findOpen = live && ph === "find";
-    c.$(".find").hidden = !findOpen;
-    c.$(".locked").hidden = findOpen;
-    c.$(".locked").textContent = doneA[i] === "O" ? "搶答時間結束了，你答對了 ✓" : (doneA[i] ? "搶答時間結束了，你有送出答案 ✓" : "搶答時間結束了。");
-    const thxOpen = !(live && ph === "find");
-    c.$(".thx-open").hidden = !thxOpen;
-    c.$(".soon-text").hidden = thxOpen;
-    c.$(".thx").classList.toggle("soon", !thxOpen);
-    c.$(".timer").hidden = !(live && ph === "thanks");
-    if(moved){
-      const collapsed = past;
-      c.el.classList.toggle("collapsed", collapsed);
-      c.head.setAttribute("aria-expanded", !collapsed);
-    }
-    c.setChip();
-  });
+  refreshCards(moved);
   const wait = document.getElementById("wait"), wt = document.getElementById("waitText");
   wait.style.order = 1;
   if(cur === 0){ wait.hidden = false; wait.style.order = 0; wt.textContent = "等主持人開始" + (LABELS[0]||"第壹題"); }
-  else if(cur < MS.length || ph === "find"){ wait.hidden = false; wt.textContent = ph === "find" ? "搶答結束後，會開放寫謝謝" : "下一題準備中，主持人開放後會自動出現"; }
+  else if(cur > MS.length){ wait.hidden = false; wait.style.order = 0; wt.textContent = "排行榜公布中，抬頭看大螢幕！"; }
+  else if(cur < MS.length || ph === "find"){ wait.hidden = false; wt.textContent = ph === "find" ? "主持人結束搶答後，會再給大家一分鐘寫謝謝" : "下一題準備中，主持人開放後會自動出現"; }
   else wait.hidden = true;
   if(!first && moved && cur > 0){
     const c = cards[cur-1];
@@ -374,6 +464,49 @@ function applyState(cur, ph, at){
     target.scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"start"});
   }
   tick();
+}
+function refreshCards(moved){
+  if(current < 0) return;
+  const cur = current, ph = phase;
+  cards.forEach((c,i)=>{
+    const n = i+1, live = n === cur, past = n < cur;
+    const td = teamDone[n], m = MS[i];
+    const teamOK = !!td && td.correct !== "X";
+    c.el.hidden = n > cur;
+    c.el.classList.toggle("live", live);
+    c.el.classList.toggle("past", past);
+    c.el.style.order = live ? 0 : (cur - n) + 1;
+    const findOpen = live && ph === "find";
+    const f = c.$(".find");
+    f.hidden = !findOpen;
+    f.classList.toggle("tdone", teamOK && !allowAgain[i]);
+    f.classList.toggle("can-again", teamOK && !scoredHint(td));
+    if(teamOK){ c.$(".teamdone").hidden = false; c.$(".teamdone").textContent = (td.correct==="O" ? "你們答「隊」了！" : "你們隊送出了！") + "（" + (td.by === (me&&me.name) ? "你" : td.by) + " 送的）可以開始寫謝謝了。"; }
+    else c.$(".teamdone").hidden = true;
+    c.$(".locked").hidden = findOpen;
+    c.$(".locked").textContent = teamOK ? (td.correct==="O" ? "搶答時間結束了，你們答「隊」了 ✓" : "搶答時間結束了，你們隊有送出答案 ✓") : "搶答時間結束了。";
+    const thxOpen = !(live && ph === "find") || teamOK || !!doneA[i];
+    c.$(".thx-open").hidden = !thxOpen;
+    c.$(".soon-text").hidden = thxOpen;
+    c.$(".thx").classList.toggle("soon", !thxOpen);
+    c.$(".timer").hidden = !(live && ph === "thanks");
+    if(moved){
+      c.el.classList.toggle("collapsed", past);
+      c.head.setAttribute("aria-expanded", !past);
+    }
+    if(teamOK && !doneA[i]) doneA[i] = td.correct === "O" ? "O" : true;
+    c.setChip();
+  });
+}
+/* 計分題答對後就不再送；不計分題可以讓隊員各送一份 */
+function scoredHint(td){ return td && td.correct === "O"; }
+function applyDone(done){
+  const next = {};
+  Object.keys(done||{}).forEach(k=>next[Number(k)] = done[k]);
+  Object.keys(teamDone).forEach(k=>{ if(!next[k]) next[k] = teamDone[k]; });
+  const changed = JSON.stringify(next) !== JSON.stringify(teamDone);
+  teamDone = next;
+  if(changed && current >= 0) refreshCards(false);
 }
 function tick(){
   if(current < 1 || phase !== "thanks") return;
@@ -386,10 +519,20 @@ function tick(){
 setInterval(tick, 1000);
 async function poll(){
   try{
-    if(!URL_){ const st = store.get("thanks-state",{current:0,phase:"find",at:0}); applyState(st.current, st.phase, st.at); return; }
-    const r = await fetch(URL_ + "?state=1&t=" + Date.now());
+    if(!URL_){
+      const st = store.get("thanks-state",{current:0,phase:"find",at:0});
+      if(me){ const d = {}; store.get("thanks-demo",[]).forEach(x=>{ if(x.code===me.code && x.type==="answer" && !d[x.mission]) d[x.mission]={by:x.name,correct:""}; }); applyDone(d);
+        const t = store.get("thanks-teams",{})[me.code]; if(t){ me.members = t.members; showTeam(); } }
+      applyState(st.current, st.phase, st.at); return;
+    }
+    const r = await fetch(URL_ + "?state=1" + (me ? "&team=" + encodeURIComponent(me.code) : "") + "&t=" + Date.now());
     const j = await r.json();
-    if(j.ok){ if(j.now) clockOffset = j.now - Date.now(); applyState(j.current, j.phase, j.at); }
+    if(j.ok){
+      if(j.now) clockOffset = j.now - Date.now();
+      if(me && j.done) applyDone(j.done);
+      if(me && Array.isArray(j.members)){ me.members = j.members; store.set("thanks-team",me); showTeam(); }
+      applyState(j.current, j.phase, j.at);
+    }
   }catch(e){}
 }
 poll();
