@@ -438,8 +438,9 @@ MS.forEach((m,i)=>{
     try{
       await send({type:"thanks", id:uid(), name, team:me.team, code:me.code, mission:i+1, title:m.title||"", thanks, thanksTo:m.thanksTo||""});
       doneT[i] = true; store.set(doneKey("doneT"),doneT); setChip();
-      msg.className = "msg thx-msg ok"; msg.textContent = "謝謝你的謝謝，已經送上大螢幕。";
-      btn.textContent = "再寫一句";
+      tta.value = "";   // 清空，想再謝謝別人可以直接寫下一句
+      msg.className = "msg thx-msg ok"; msg.textContent = "已送上大螢幕：「" + thanks + "」想再謝謝別人，可以直接寫下一句。";
+      btn.textContent = "再送一句";
     }catch(e){ msg.className = "msg thx-msg err"; msg.textContent = "沒有送出去，請確認網路後再按一次。"; btn.textContent = "送出感謝"; }
     btn.disabled = false;
   });
