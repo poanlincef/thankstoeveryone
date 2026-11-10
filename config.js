@@ -43,16 +43,6 @@ window.MISSIONS = [
     thanksTo: "邀請你、帶你來聚會的人"
   },
   {
-    id: "nanda",
-    title: "南大附中的阿伯",
-    question: "南大附中門口的阿伯，騎的機車是什麼顏色？",
-    map: START_MAP,
-    photo: "optional",
-    hint: "校門在中山南路上，沿著校門口找找看。",
-    thanksLead: "阿伯每天騎車經過校門口。那每天把你送到學校的人呢？",
-    thanksTo: "每天載你來學校的家人、司機"
-  },
-  {
     id: "jiaqi",
     title: "家齊看板下的人",
     question: "站在家齊高中校門口看板底下的人，穿什麼顏色的衣服？",
@@ -61,6 +51,16 @@ window.MISSIONS = [
     hint: "校門在健康路一段上。",
     thanksLead: "校門口總有人站著、等著。你也有一直在等你的人嗎？",
     thanksTo: "校門口的警衛、導護志工，或總是等你一起放學的朋友"
+  },
+  {
+    id: "nanda",
+    title: "南大附中的雙載阿伯",
+    question: "南大附中「校門口的雙載」阿伯的機車是什麼顏色？",
+    map: START_MAP,
+    photo: "optional",
+    hint: "校門在中山南路上，沿著校門口找找看。",
+    thanksLead: "阿伯雙載著人到學校。你有沒有被誰載過、陪過一段上學的路？",
+    thanksTo: "載過你、陪你走過上學路的人（家人、司機、同學、交通導護都可以）"
   },
   {
     id: "nanshang",
