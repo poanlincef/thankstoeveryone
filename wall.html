@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>感謝牆</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* Layout: projector wall. A fixed manuscript-paper column on the left (vertical title, QR, counts, mission filter); submissions flow as cards in columns on the right, newest first. */
+:root{
+  --paper:#F3F7F6; --card:#FFFFFF; --ink:#1D2220; --muted:#5B6166;
+  --grid:#43AE74; --grid-soft:#D3EBDD; --wash:rgba(246,250,249,.78);
+  --f-serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --f-sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%}
+body{background:var(--paper);color:var(--ink);font:16px/1.55 var(--f-sans);overflow:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(var(--wash),var(--wash)),url(paper.jpg) center/cover no-repeat,var(--paper)}
+.app{display:grid;grid-template-columns:clamp(260px,22vw,340px) 1fr;height:100%}
+aside{border-right:2px solid var(--grid);background:rgba(255,255,255,.72);padding:28px 24px;display:flex;flex-direction:column;gap:22px;min-height:0;overflow:auto}
+.titlebox{display:flex;justify-content:space-between;gap:10px}
+h1{margin:0;font-family:var(--f-serif);font-weight:700;font-size:clamp(1.6rem,2.3vw,2.4rem);--vt-gap:.3em}
+.meta{font-family:var(--f-serif);font-size:.95rem;align-self:flex-end;--vt-gap:.45em}
+
+/* hand-stacked vertical text: one character per line, columns right to left */
+.vt{display:flex;flex-direction:row-reverse;gap:var(--vt-gap,.35em);writing-mode:horizontal-tb}
+.vt .col{display:flex;flex-direction:column;align-items:center;line-height:1.18}
+.vt .col span{display:block;width:1em;text-align:center}
+.vt .col span.p{height:.55em;line-height:.3;transform:translateX(.38em)}
+.qr{background:#fff;border:1.5px solid var(--grid);padding:12px;display:flex;flex-direction:column;align-items:center;gap:8px}
+#qrcode{width:100%;aspect-ratio:1;max-width:220px;display:flex;align-items:center;justify-content:center}
+#qrcode svg{width:100%;height:auto;display:block}
+.qr p{margin:0;font-size:.85rem;text-align:center;word-break:break-all;color:var(--muted)}
+.count{display:flex;align-items:baseline;gap:8px;font-family:var(--f-serif)}
+.count b{font-size:3rem;line-height:1;color:var(--grid);font-variant-numeric:tabular-nums}
+.tabs{display:flex;flex-direction:column;gap:6px}
+.tabs button{appearance:none;border:1.5px solid var(--grid-soft);background:#fff;color:var(--ink);font:500 .95rem var(--f-sans);padding:8px 12px;display:flex;justify-content:space-between;gap:8px;cursor:pointer;text-align:left}
+.tabs button[aria-pressed="true"]{border-color:var(--grid);background:var(--grid);color:#fff;font-weight:700}
+.tabs span.n{font-variant-numeric:tabular-nums}
+.status{font-size:.8rem;color:var(--muted);margin-top:auto}
+main{overflow:auto;padding:28px;min-width:0}
+.grid{columns:300px;column-gap:20px}
+.card{break-inside:avoid;margin:0 0 20px;background:var(--card);border:1.5px solid var(--grid);display:flex;flex-direction:column;animation:in .5s ease both}
+.card .ph{background:var(--grid-soft);aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.85rem}
+.card img{display:block;width:100%;height:auto}
+.card .tx{padding:12px 14px 14px;display:flex;flex-direction:column;gap:6px}
+.card .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.card .who{font-family:var(--f-serif);font-weight:700;font-size:1.2rem}
+.card .tag{font-size:.75rem;color:var(--grid);border:1px solid var(--grid);padding:1px 8px;white-space:nowrap}
+.card .ans{margin:0;font-size:1.1rem;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+.empty{max-width:28rem;margin:12vh auto 0;text-align:center;font-family:var(--f-serif);font-size:1.3rem;line-height:1.8}
+.empty small{display:block;font-family:var(--f-sans);font-size:.95rem;color:var(--muted)}
+@keyframes in{from{opacity:.2;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.card{animation:none}}
+@media (max-width:760px){body{overflow:auto}.app{grid-template-columns:1fr;height:auto}aside{border-right:0;border-bottom:2px solid var(--grid)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="titlebox">
+      <div class="meta" data-vt="嘉南中學聯合聚會|貳零貳陸．壹壹壹貳"></div>
+      <h1 data-vt="因為，|需要感謝的人太多了"></h1>
+    </div>
+    <div class="qr">
+      <div id="qrcode" aria-label="任務頁 QR code"></div>
+      <p>掃描加入街景任務<br><span id="qrurl"></span></p>
+    </div>
+    <div class="count"><b id="total">0</b><span>則感謝已送達</span></div>
+    <div class="tabs" id="tabs" role="group" aria-label="篩選題目"></div>
+    <div class="status" id="status">連線中…</div>
+  </aside>
+  <main>
+    <div class="empty" id="empty">還沒有人送出<small>掃左邊的 QR code，打開街景開始找吧</small></div>
+    <div class="grid" id="grid"></div>
+  </main>
+</div>
+
+<script>
+/* 直排文字：data-vt 用「|」分欄，每個字一行 */
+document.querySelectorAll("[data-vt]").forEach(function(el){
+  el.classList.add("vt");
+  el.setAttribute("aria-label", el.getAttribute("data-vt").replace(/\|/g,""));
+  el.getAttribute("data-vt").split("|").forEach(function(t){
+    var col=document.createElement("span"); col.className="col"; col.setAttribute("aria-hidden","true");
+    Array.from(t).forEach(function(ch){ var s=document.createElement("span"); s.textContent=ch; if("，、。".indexOf(ch)>-1) s.className="p"; col.appendChild(s); });
+    el.appendChild(col);
+  });
+});
+</script>
+<script src="qrcode.js"></script>
+<script src="config.js"></script>
+<script>
+(function(){
+const URL_ = (window.SCRIPT_URL || "").trim();
+const MS = Array.isArray(window.MISSIONS) ? window.MISSIONS : [];
+const NUM = ["壹","貳","參","肆","伍","陸","柒","捌","玖","拾"];
+const studentURL = window.STUDENT_URL || location.href.replace(/wall\.html.*$/,"").replace(/[?#].*$/,"");
+document.getElementById("qrurl").textContent = studentURL.replace(/^https?:\/\//,"");
+try{ const q=qrcode(0,"M"); q.addData(studentURL); q.make();
+  document.getElementById("qrcode").innerHTML = q.createSvgTag({cellSize:8,margin:0,scalable:true}); }
+catch(e){ document.getElementById("qrcode").textContent = "QR code 載入失敗"; }
+
+let filter = 0, items = [];
+const imgCache = {}, cards = {};
+const tabs = document.getElementById("tabs");
+function renderTabs(){
+  const counts = {}; items.forEach(it=>counts[it.mission]=(counts[it.mission]||0)+1);
+  const defs = [{v:0,label:"全部",n:items.length}].concat(MS.map((m,i)=>({v:i+1,label:"第"+(NUM[i]||i+1)+"題　"+(m.title||""),n:counts[i+1]||0})));
+  tabs.innerHTML = "";
+  defs.forEach(d=>{
+    const b = document.createElement("button"); b.type="button";
+    b.setAttribute("aria-pressed", filter===d.v);
+    const l = document.createElement("span"); l.textContent = d.label;
+    const n = document.createElement("span"); n.className="n"; n.textContent = d.n;
+    b.append(l,n);
+    b.addEventListener("click",()=>{filter=d.v;render();});
+    tabs.appendChild(b);
+  });
+}
+function makeCard(it){
+  const c = document.createElement("article"); c.className = "card";
+  if(it.img){
+    const ph = document.createElement("div"); ph.className="ph"; ph.textContent="截圖載入中…"; c.appendChild(ph);
+    loadImg(it.img).then(src=>{ if(!src){ph.textContent="截圖讀取失敗";return;} const im=new Image(); im.alt=(it.name||"")+" 的街景截圖"; im.src=src; ph.replaceWith(im); });
+  }
+  const tx = document.createElement("div"); tx.className="tx";
+  const top = document.createElement("div"); top.className="top";
+  const w = document.createElement("span"); w.className="who"; w.textContent = it.name || "無名小卒";
+  const t = document.createElement("span"); t.className="tag"; const mi = Number(it.mission)-1;
+  t.textContent = "第"+(NUM[mi]||it.mission)+"題"+(MS[mi]&&MS[mi].title?"．"+MS[mi].title:"");
+  top.append(w,t); tx.appendChild(top);
+  if(it.answer){ const a=document.createElement("p"); a.className="ans"; a.textContent=it.answer; tx.appendChild(a); }
+  c.appendChild(tx);
+  return c;
+}
+function render(){
+  renderTabs();
+  document.getElementById("total").textContent = items.length;
+  document.getElementById("empty").hidden = items.length>0;
+  const grid = document.getElementById("grid");
+  const shown = items.filter(it=>!filter||Number(it.mission)===filter).slice().reverse();
+  grid.replaceChildren(...shown.map(it=>{ const k=it.key; return cards[k] || (cards[k]=makeCard(it)); }));
+}
+const queue = []; let busy = false;
+function loadImg(id){
+  if(id.startsWith("data:")) return Promise.resolve(id);
+  if(imgCache[id]) return imgCache[id];
+  imgCache[id] = new Promise(res=>{ queue.push({id,res}); pump(); });
+  return imgCache[id];
+}
+async function pump(){
+  if(busy) return; busy = true;
+  while(queue.length){
+    const {id,res} = queue.shift();
+    try{ const r = await fetch(URL_+"?img="+encodeURIComponent(id)); const j = await r.json(); res(j.ok?j.data:null); }
+    catch(e){ res(null); delete imgCache[id]; }
+  }
+  busy = false;
+}
+async function poll(){
+  const st = document.getElementById("status");
+  try{
+    let list;
+    if(!URL_){
+      try{ list = JSON.parse(localStorage.getItem("thanks-demo")||"[]"); }catch(e){ list = []; }
+      list = list.map(x=>Object.assign({},x,{img:x.image||""}));
+      st.textContent = "試玩模式：只顯示這台裝置送出的內容";
+    }else{
+      const r = await fetch(URL_+"?list=1&t="+Date.now()); const j = await r.json();
+      if(!j.ok) throw new Error(j.error);
+      list = j.items;
+      st.textContent = "已連線．"+new Date().toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit",second:"2-digit"})+" 更新";
+    }
+    list.forEach(x=>x.key = x.id || ("n"+x.n));
+    const changed = list.length!==items.length || list.some((x,i)=>!items[i]||items[i].key!==x.key);
+    items = list;
+    if(changed) render();
+  }catch(e){
+    st.textContent = "連線失敗，自動重試中…";
+  }
+}
+render(); poll(); setInterval(poll, URL_?6000:2500);
+})();
+</script>
+</body>
+</html>
