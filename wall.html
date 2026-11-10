@@ -113,6 +113,23 @@ aside{gap:16px}
 .rest .rk{font-family:var(--f-serif);font-weight:900;color:var(--muted);font-variant-numeric:tabular-nums}
 .rest .rp{font-variant-numeric:tabular-nums;color:var(--grid);font-weight:700}
 @media (prefers-reduced-motion:reduce){.pod.shown .pname,.pod.shown .ppts{animation:none}}
+.viewsel{display:flex;flex-direction:column;gap:4px}
+.vs{display:grid;grid-template-columns:repeat(3,1fr);border:1.5px solid var(--grid)}
+.vs button{appearance:none;border:0;background:#fff;color:var(--ink);font:500 .8rem var(--f-sans);padding:7px 2px;cursor:pointer}
+.vs button + button{border-left:1px solid var(--grid-soft)}
+.vs button[aria-pressed="true"]{background:var(--grid);color:#fff;font-weight:700}
+.vs button:focus-visible{outline:3px solid var(--grid);outline-offset:2px}
+main{position:relative}
+body.has-ticker main{padding-bottom:96px}
+.ticker{position:fixed;left:clamp(260px,22vw,340px);right:0;bottom:0;height:72px;background:var(--ink);color:#fff;overflow:hidden;display:flex;align-items:center;z-index:5;border-top:3px solid var(--grid)}
+.track{display:flex;white-space:nowrap;animation:marquee var(--dur,40s) linear infinite;will-change:transform;font-size:1.35rem;padding-left:24px}
+.run{display:flex;flex:none}
+.tk{display:inline-flex;align-items:baseline;gap:8px;margin-right:56px;font-family:var(--f-serif)}
+.tk b{color:#9FE0BA;font-family:var(--f-sans);font-size:1rem;font-weight:700}
+.tk small{font-family:var(--f-sans);font-size:.95rem;color:#C9D2CE}
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.track{animation:none;flex-wrap:wrap;white-space:normal}.run[aria-hidden]{display:none}}
+@media (max-width:760px){.ticker{left:0}}
 .status{font-size:.8rem;color:var(--muted);margin-top:auto}
 main{overflow:auto;padding:28px;min-width:0}
 .grid{columns:300px;column-gap:20px}
@@ -159,7 +176,14 @@ main{overflow:auto;padding:28px;min-width:0}
         <button type="button" id="savekey">確定</button>
       </div>
       <p class="hostmsg" id="hostmsg" hidden></p>
-      <label class="allbox" for="showAll"><input type="checkbox" id="showAll">顯示所有題目的投稿</label>
+      <div class="viewsel" role="group" aria-label="大螢幕顯示">
+        <span class="lbl">大螢幕顯示</span>
+        <div class="vs" id="viewSel">
+          <button type="button" data-v="current" aria-pressed="true">目前進度</button>
+          <button type="button" data-v="thanks" aria-pressed="false">所有感謝</button>
+          <button type="button" data-v="all" aria-pressed="false">所有投稿</button>
+        </div>
+      </div>
     </div>
     <section class="roster" id="rosterBox" aria-label="這一題各隊進度">
       <div class="rsum"><span id="rTitle">這一題進度</span><span>答題 <b id="rA">0</b> 隊．感謝 <b id="rT">0</b> 人．共 <b id="rN">0</b> 隊</span></div>
@@ -176,6 +200,7 @@ main{overflow:auto;padding:28px;min-width:0}
     </section>
     <div class="empty" id="empty">這一題還沒有人送出<small>打開街景開始找吧</small></div>
     <div class="grid" id="grid"></div>
+    <div class="ticker" id="ticker" hidden aria-label="大家寫的感謝的話"><div class="track" id="track"></div></div>
     <section class="boardview" id="boardView" hidden aria-live="polite">
       <div class="podium" id="podium"></div>
       <div id="restWrap" class="restwrap"><p class="restt">第四名以後</p><ol class="rest" id="rest"></ol></div>
@@ -214,7 +239,7 @@ try{ const q=qrcode(0,"M"); q.addData(studentURL); q.make();
 catch(e){ $("qrcode").textContent = "QR code 載入失敗"; }
 
 const THX_SEC = Number(window.THANKS_SECONDS) || 60;
-let items = [], current = 0, phase = "find", phaseAt = 0, clockOffset = 0, showAll = false, pending = false;
+let items = [], current = 0, phase = "find", phaseAt = 0, clockOffset = 0, view = "current", pending = false;
 const imgCache = {}, cards = {};
 const LABELS = (()=>{ let k=0; return MS.map(m=> m.practice ? "試玩題" : "第"+(NUM[k++]||k)+"題"); })();
 const numText = n => LABELS[n-1] || ("第"+n+"題");
@@ -388,17 +413,53 @@ function renderBoard(){
   $("restWrap").hidden = board.length <= 3;
 }
 
+/* 頒獎時底下跑馬燈：所有人的感謝的話 */
+let tickerSig = "";
+function renderTicker(){
+  const on = current >= BOARD;
+  $("ticker").hidden = !on;
+  document.body.classList.toggle("has-ticker", on);
+  if(!on) return;
+  const th = items.filter(it=>it.type==="thanks" && it.thanks);
+  const sig = th.map(it=>it.key).join(",");
+  if(sig === tickerSig) return;
+  tickerSig = sig;
+  const track = $("track"); track.replaceChildren();
+  if(!th.length){ track.textContent = "謝謝每一位今天一起迷路、一起找人的你。"; track.style.animation = "none"; return; }
+  const makeRun = () => {
+    const frag = document.createDocumentFragment();
+    th.forEach(it=>{
+      const mi = Number(it.mission)-1;
+      const s = document.createElement("span"); s.className = "tk";
+      const to = document.createElement("b"); to.textContent = "給 " + (it.thanksTo || (MS[mi]&&MS[mi].thanksTo) || "你") + "：";
+      const tx = document.createTextNode("「" + it.thanks + "」");
+      const by = document.createElement("small"); by.textContent = "— " + (it.name||"") + (it.team ? "（" + it.team + "）" : "");
+      s.append(to, tx, by); frag.appendChild(s);
+    });
+    return frag;
+  };
+  const run1 = document.createElement("div"); run1.className = "run"; run1.appendChild(makeRun());
+  const run2 = document.createElement("div"); run2.className = "run"; run2.setAttribute("aria-hidden","true"); run2.appendChild(makeRun());
+  track.append(run1, run2);
+  const chars = th.reduce((n,it)=>n + (it.thanks||"").length + 20, 0);
+  track.style.animation = "";
+  track.style.setProperty("--dur", Math.max(25, Math.round(chars * 0.28)) + "s");
+}
+
 function render(){
   renderBanner();
-  const onBoard = current >= BOARD;
-  $("boardView").hidden = !onBoard; $("grid").hidden = onBoard; $("rosterBox").hidden = onBoard;
+  renderTicker();
+  const onBoard = current >= BOARD && view === "current";
+  $("boardView").hidden = !onBoard; $("grid").hidden = onBoard; $("rosterBox").hidden = current >= BOARD;
   if(onBoard){ renderBoard(); $("empty").hidden = true; $("total").textContent = computeBoard().length; $("countLabel").textContent = "隊參加"; document.body.classList.add("started"); return; }
-  renderRoster();
+  if(current < BOARD) renderRoster();
   document.body.classList.toggle("started", current > 0);
   const grid = $("grid");
   let shown, label;
-  if(showAll){
+  if(view === "all"){
     shown = items.slice().reverse().map(it=>({it})); label = "則投稿（全部題目）";
+  }else if(view === "thanks"){
+    shown = items.filter(it=>it.type==="thanks").slice().reverse().map(it=>({it})); label = "則感謝（全部題目）";
   }else if(phase === "find"){
     const m = MS[current-1] || {}, isScored = scored.includes(m.id);
     const seen = {};
@@ -417,11 +478,11 @@ function render(){
     shown = items.filter(it=>it.type==="thanks" && Number(it.mission)===current).slice().reverse().map(it=>({it}));
     label = "則感謝．這一題";
   }
-  grid.classList.toggle("race", !showAll && phase === "find");
+  grid.classList.toggle("race", view === "current" && phase === "find");
   $("total").textContent = shown.length;
-  $("countLabel").textContent = current === 0 && !showAll ? "則感謝已送達" : label;
-  $("empty").hidden = shown.length > 0 || current === 0;
-  $("empty").firstChild.textContent = phase === "find" ? (scored.includes((MS[current-1]||{}).id) ? "還沒有人答對" : "還沒有人送出") : "還沒有人送出感謝";
+  $("countLabel").textContent = current === 0 && view === "current" ? "則感謝已送達" : label;
+  $("empty").hidden = shown.length > 0 || (current === 0 && view === "current");
+  $("empty").firstChild.textContent = view !== "current" ? "還沒有任何投稿" : phase === "find" ? (scored.includes((MS[current-1]||{}).id) ? "還沒有人答對" : "還沒有人送出") : "還沒有人送出感謝";
   grid.replaceChildren(...shown.map(x=>{
     const k = x.it.key + "|" + (x.rank||"") + "|" + (x.elapsed==null?"":x.elapsed);
     return cards[k] || (cards[k] = makeCard(x.it, x.rank, x.elapsed));
@@ -512,7 +573,12 @@ $("prev").addEventListener("click",goPrev);
 $("next").addEventListener("click",goNext);
 $("savekey").addEventListener("click",()=>{ const k=$("hostkey").value.trim(); if(!k) return; store.set("thanks-hostkey",k); $("hostkey").value=""; $("keybox").hidden=true; hostMsg(""); });
 $("hostkey").addEventListener("keydown",e=>{ if(e.key==="Enter") $("savekey").click(); });
-$("showAll").addEventListener("change",e=>{ showAll = e.target.checked; render(); });
+$("viewSel").addEventListener("click",e=>{
+  const b = e.target.closest("button"); if(!b) return;
+  view = b.dataset.v;
+  document.querySelectorAll("#viewSel button").forEach(x=>x.setAttribute("aria-pressed", x===b));
+  render();
+});
 document.addEventListener("keydown",e=>{
   if(e.target.closest("input,textarea")) return;
   if(["ArrowRight","PageDown"].includes(e.key)){ e.preventDefault(); goNext(); }
