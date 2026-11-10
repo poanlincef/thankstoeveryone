@@ -54,8 +54,29 @@ button:focus-visible,a:focus-visible,.upload:focus-within{outline:3px solid var(
   background:repeating-linear-gradient(to bottom,transparent 0 3.2rem,var(--grid-soft) 3.2rem calc(3.2rem + 1px))}
 .mission .no b{font-family:var(--f-serif);font-weight:900;font-size:1.4rem;color:var(--grid);display:flex;flex-direction:column;align-items:center;line-height:1.2}
 .mission .body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:12px;min-width:0}
-.mhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
-.mhead h2{margin:0;font-family:var(--f-serif);font-size:1.25rem;font-weight:700}
+#missions{display:flex;flex-direction:column;gap:18px}
+.mhead{appearance:none;border:0;background:none;padding:0;margin:0;text-align:left;color:inherit;font:inherit;cursor:pointer;
+  display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;width:100%}
+.mhead .h2{flex:1;min-width:0}
+.fold{width:.6em;height:.6em;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg) translateY(-2px);flex:none;align-self:center;transition:transform .2s}
+.mission.collapsed .fold{transform:rotate(-45deg)}
+.mission.collapsed .body > :not(.mhead){display:none}
+.mission.collapsed .body{padding-bottom:14px}
+.mission.past{opacity:.92}
+.mission.past .no{background:var(--grid-soft)}
+.mission.live{box-shadow:0 0 0 3px var(--grid-soft)}
+.chip.live{background:var(--ink);border-color:var(--ink);color:#fff}
+.wait{background:var(--card);border:1.5px dashed var(--grid);padding:18px 16px;display:flex;align-items:center;gap:12px}
+.wait p{margin:0;font-family:var(--f-serif);font-size:1.1rem;font-weight:700}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--grid);flex:none;animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
+details.thx > summary{cursor:pointer;font-weight:700;color:var(--grid);list-style:none;display:flex;align-items:center;gap:8px}
+details.thx > summary::-webkit-details-marker{display:none}
+details.thx > summary::before{content:"";width:.5em;height:.5em;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform .2s}
+details.thx[open] > summary::before{transform:rotate(45deg)}
+details.thx[open] > summary{margin-bottom:6px}
+details.thx .thx-field{margin-top:8px}
+.mhead .h2{margin:0;font-family:var(--f-serif);font-size:1.25rem;font-weight:700}
 .chip{font-size:.75rem;padding:2px 10px;border:1px solid var(--grid-soft);color:var(--muted);white-space:nowrap}
 .chip.ok{background:var(--done);border-color:var(--done);color:#fff}
 .q{margin:0;font-size:1.05rem}
@@ -72,13 +93,18 @@ button:focus-visible,a:focus-visible,.upload:focus-within{outline:3px solid var(
 .thumb{width:72px;height:72px;object-fit:cover;flex:none;border:1px solid var(--grid-soft)}
 .uptext{display:flex;flex-direction:column;min-width:0}
 .rm{margin-left:auto;appearance:none;border:0;background:none;color:var(--muted);font:500 .85rem var(--f-sans);text-decoration:underline;cursor:pointer;padding:6px}
+.thx{border-top:1.5px dashed var(--grid);padding-top:14px}
+.thx-lead{margin:0;font-family:var(--f-serif);font-size:1.05rem;font-weight:700;color:var(--grid)}
+.thx-label{display:block}
+.thx-to{display:block;font-family:var(--f-serif);font-size:1.15rem;font-weight:700;color:var(--ink);margin-top:2px}
+.thx-ta{background:#FBFDFC}
 .msg{margin:0;font-size:.88rem}
 .msg.err{color:var(--warn)}
 .msg.ok{color:var(--done)}
 .demo{background:#FFF7E0;border:1px solid #E9D497;padding:10px 12px;font-size:.85rem}
 footer{text-align:center;font-size:.8rem;color:var(--muted);font-family:var(--f-serif);letter-spacing:.1em}
 @media (max-width:380px){.how{grid-template-columns:1fr}}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}.dot{animation:none;opacity:1}}
 </style>
 </head>
 <body>
@@ -91,7 +117,7 @@ footer{text-align:center;font-size:.8rem;color:var(--muted);font-family:var(--f-
   <section class="how" aria-label="怎麼玩">
     <div><b>一　開街景</b>按每一題的「打開街景」，在 Google 地圖裡走到題目的地方。</div>
     <div><b>二　找、截圖</b>找到答案或那個人，用手機截圖。</div>
-    <div><b>三　送出</b>回到這頁寫下答案、附上截圖，按送出就會上大螢幕。</div>
+    <div><b>三　說謝謝</b>寫下答案，再寫一句謝謝給你想到的人，送出就會上大螢幕。題目會一題一題開放。</div>
   </section>
 
   <p class="demo" id="demo" hidden>試玩模式：還沒接上收件的試算表，送出的內容只會存在這支手機。</p>
@@ -100,7 +126,12 @@ footer{text-align:center;font-size:.8rem;color:var(--muted);font-family:var(--f-
     <input id="who" type="text" maxlength="20" placeholder="例：南一中阿布、第三小隊" autocomplete="nickname">
   </label>
 
-  <div id="missions" style="display:flex;flex-direction:column;gap:18px"></div>
+  <div id="missions">
+    <div class="wait" id="wait" role="status" aria-live="polite">
+      <span class="dot" aria-hidden="true"></span>
+      <p id="waitText">等主持人開始第壹題</p>
+    </div>
+  </div>
 
   <footer>嘉南中學聯合聚會　2026.11.12</footer>
 </div>
@@ -109,7 +140,7 @@ footer{text-align:center;font-size:.8rem;color:var(--muted);font-family:var(--f-
   <article class="mission">
     <div class="no"><b></b></div>
     <div class="body">
-      <div class="mhead"><h2></h2><span class="chip">還沒送出</span></div>
+      <button type="button" class="mhead" aria-expanded="true"><span class="h2" role="heading" aria-level="2"></span><span class="chip">還沒送出</span><span class="fold" aria-hidden="true"></span></button>
       <p class="q"></p>
       <p class="tip"></p>
       <a class="btn map" target="_blank" rel="noopener">
@@ -124,6 +155,13 @@ footer{text-align:center;font-size:.8rem;color:var(--muted);font-family:var(--f-
         <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>
         <span class="uptext"><span class="uplabel">附上街景截圖</span><span class="need"></span></span>
       </label>
+      <details class="thx" open>
+        <summary>感謝的話</summary>
+        <p class="thx-lead"></p>
+        <label class="field thx-field"><span class="thx-label">寫一句謝謝給<b class="thx-to"></b></span>
+          <textarea class="thx-ta" maxlength="80" rows="2" placeholder="例：謝謝你每天早上準時出現。"></textarea>
+        </label>
+      </details>
       <button class="btn send" type="button">送出這一題</button>
       <p class="msg" role="status" aria-live="polite"></p>
     </div>
@@ -189,18 +227,26 @@ async function send(payload){
 }
 
 const box = document.getElementById("missions"), tpl = document.getElementById("tpl");
+const cards = [];
 MS.forEach((m,i)=>{
   const el = tpl.content.firstElementChild.cloneNode(true);
   const $ = s => el.querySelector(s);
   { const b=$(".no b"); b.setAttribute("aria-label","第"+(i+1)+"題"); Array.from("第"+(NUM[i]||i+1)+"題").forEach(ch=>{const sp=document.createElement("span");sp.textContent=ch;sp.setAttribute("aria-hidden","true");b.appendChild(sp);}); }
-  $("h2").textContent = m.title || ("第 "+(i+1)+" 題");
+  $(".h2").textContent = m.title || ("第 "+(i+1)+" 題");
   $(".q").textContent = m.question || "";
   if(m.hint) $(".tip").textContent = m.hint; else $(".tip").hidden = true;
   $(".map").href = m.map || "https://www.google.com/maps";
   const photo = m.photo || "optional";
-  const ta = $("textarea"); ta.id = "ans"+i;
+  const ta = $(".ans textarea"); ta.id = "ans"+i;
+  const askAnswer = m.askAnswer !== false;
+  if(!askAnswer) $(".ans").hidden = true;
+  const tta = $(".thx-ta"); tta.id = "thx"+i; $(".thx-field").htmlFor = tta.id;
+  if(m.thanksTo){
+    $(".thx-to").textContent = m.thanksTo;
+    $(".thx-lead").textContent = m.thanksLead || "找到了嗎？這讓你想到誰？";
+  } else $(".thx").hidden = true;
   $(".ans").htmlFor = ta.id;
-  if(photo==="required") $(".ans").firstChild.textContent = "想說的話或答案（選填）";
+  if(photo==="required") $(".ans").firstChild.textContent = "你的答案（選填）";
   const up = $(".upload"), file = $(".upload input"); file.id = "img"+i;
   if(photo==="none") up.hidden = true;
   $(".need").textContent = photo==="required" ? "這題一定要附截圖" : "可以不附";
@@ -228,16 +274,17 @@ MS.forEach((m,i)=>{
   });
 
   btn.addEventListener("click", async ()=>{
-    const name = who.value.trim(), answer = ta.value.trim();
+    const name = who.value.trim(), answer = askAnswer ? ta.value.trim() : "", thanks = tta.value.trim();
     msg.className = "msg err";
     if(!name){ msg.textContent = "先在最上面填你的名字或小隊名。"; who.focus(); return; }
     if(photo==="required" && !image){ msg.textContent = "這題要附上街景截圖。"; return; }
-    if(!answer && !image){ msg.textContent = "寫下答案或附上截圖再送出。"; ta.focus(); return; }
+    if(askAnswer && !answer && !image){ msg.textContent = "寫下答案或附上截圖再送出。"; ta.focus(); return; }
+    if(m.thanksTo && !thanks){ msg.textContent = "最後寫一句謝謝再送出。"; $(".thx").open = true; tta.focus(); return; }
     btn.disabled = true; btn.textContent = "送出中…"; msg.className = "msg"; msg.textContent = "";
     try{
-      await send({id:uid(), name, mission:i+1, title:m.title||"", answer, image});
+      await send({id:uid(), name, mission:i+1, title:m.title||"", answer, thanks, thanksTo:m.thanksTo||"", image});
       done[i] = true; store.set("thanks-done",done);
-      chip.textContent = "已送出 ✓"; chip.classList.add("ok");
+      chip.textContent = "已送出 ✓"; chip.classList.remove("live"); chip.classList.add("ok");
       msg.className = "msg ok"; msg.textContent = "送出了！抬頭看看大螢幕。想補充可以改完再送一次。";
       btn.textContent = "再送一次";
     }catch(e){
@@ -246,8 +293,52 @@ MS.forEach((m,i)=>{
     }
     btn.disabled = false;
   });
+  const head = $(".mhead");
+  head.addEventListener("click",()=>{ const c = !el.classList.contains("collapsed"); el.classList.toggle("collapsed",c); head.setAttribute("aria-expanded",!c); });
+  el.hidden = true;
+  cards.push({el, head, chip});
   box.appendChild(el);
 });
+
+/* ---- 主持人控制目前題號 ---- */
+let current = -1;
+function applyState(cur){
+  cur = Math.max(0, Math.min(MS.length, Number(cur)||0));
+  if(cur === current) return;
+  const first = current === -1, advanced = cur > current;
+  current = cur;
+  cards.forEach((c,i)=>{
+    const n = i+1;
+    c.el.hidden = n > cur;
+    c.el.classList.toggle("live", n === cur);
+    c.el.classList.toggle("past", n < cur);
+    c.el.style.order = n === cur ? 0 : (cur - n) + 1;
+    const collapsed = n < cur;
+    c.el.classList.toggle("collapsed", collapsed);
+    c.head.setAttribute("aria-expanded", !collapsed);
+    if(!done[i]){ c.chip.textContent = n === cur ? "進行中" : "已結束．點開補寫"; c.chip.classList.toggle("live", n === cur); }
+  });
+  const wait = document.getElementById("wait"), wt = document.getElementById("waitText");
+  wait.style.order = 1;
+  if(cur === 0){ wait.hidden = false; wait.style.order = 0; wt.textContent = "等主持人開始第" + NUM[0] + "題"; }
+  else if(cur < MS.length){ wait.hidden = false; wt.textContent = "下一題準備中，主持人開放後會自動出現"; }
+  else { wait.hidden = true; }
+  if(!first && advanced && cur > 0){
+    const live = cards[cur-1].el;
+    live.scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"start"});
+  }
+}
+async function poll(){
+  try{
+    if(!URL_){ applyState(store.get("thanks-current",0)); return; }
+    const r = await fetch(URL_ + "?state=1&t=" + Date.now());
+    const j = await r.json();
+    if(j.ok) applyState(j.current);
+  }catch(e){}
+}
+poll();
+setInterval(poll, URL_ ? 8000 : 1500);
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) poll(); });
 })();
 </script>
 </body>
