@@ -58,6 +58,19 @@ h1{margin:0;font-family:var(--f-serif);font-weight:700;font-size:clamp(1.6rem,2.
 .bn-no{font-family:var(--f-serif);font-weight:900;color:var(--grid);font-size:clamp(1.8rem,2.6vw,2.6rem);line-height:1.1;display:flex;flex-direction:column;align-items:center}
 .bn-title{margin:0;font-family:var(--f-serif);font-weight:700;font-size:clamp(1.4rem,2vw,2rem)}
 .bn-q{margin:4px 0 0;font-size:clamp(1.1rem,1.5vw,1.5rem)}
+.bn-phase{display:inline-flex;align-items:center;gap:10px;margin:0 0 6px;font-size:clamp(.9rem,1.1vw,1.1rem);font-weight:700;color:#fff;background:var(--ink);padding:4px 12px}
+.bn-phase.thx{background:var(--grid)}
+.bn-timer{font-family:var(--f-serif);font-size:clamp(2.4rem,4vw,4rem);font-weight:900;color:var(--grid);line-height:1;font-variant-numeric:tabular-nums;justify-self:end;align-self:center}
+.bn-timer.over{color:#B4442F;font-size:clamp(1.4rem,2vw,2rem)}
+.banner.timed{grid-template-columns:auto 1fr auto}
+.card .rank{position:absolute;top:10px;left:10px;background:var(--ink);color:#fff;font-family:var(--f-serif);font-weight:900;font-size:1.1rem;padding:4px 12px;z-index:1}
+.card.r1 .rank{background:#C9A227}.card.r2 .rank{background:#8E9AA3}.card.r3 .rank{background:#A8714A}
+.card{position:relative}
+.card .rank.inline{position:static;font-size:.95rem;padding:2px 10px;flex:none}
+.card .top .who{flex:1;min-width:0}
+.card .el{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.grid.race{columns:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;align-items:start}
+.grid.race .card{margin:0}
 .bn-to{margin:10px 0 0;font-size:clamp(.95rem,1.2vw,1.2rem);color:var(--grid);font-weight:700}
 .status{font-size:.8rem;color:var(--muted);margin-top:auto}
 main{overflow:auto;padding:28px;min-width:0}
@@ -96,10 +109,10 @@ main{overflow:auto;padding:28px;min-width:0}
     <div class="host" aria-label="主持人控制">
       <span class="lbl" id="curLabel">目前：尚未開始</span>
       <div class="hostrow">
-        <button type="button" id="prev">◀ 上一題</button>
+        <button type="button" id="prev">◀ 上一步</button>
         <button type="button" id="next">開始第壹題 ▶</button>
       </div>
-      <p class="hostnote">也可以用鍵盤 ← → 或簡報筆翻頁</p>
+      <p class="hostnote">每題兩步：搶答 → 寫謝謝。也可以用鍵盤 ← → 或簡報筆翻頁</p>
       <div class="keybox" id="keybox" hidden>
         <input id="hostkey" type="password" placeholder="輸入主持密碼" aria-label="主持密碼">
         <button type="button" id="savekey">確定</button>
@@ -112,7 +125,8 @@ main{overflow:auto;padding:28px;min-width:0}
   <main>
     <section class="banner" id="banner" aria-live="polite">
       <div class="bn-no" id="bnNo" aria-hidden="true"></div>
-      <div><p class="bn-title" id="bnTitle"></p><p class="bn-q" id="bnQ"></p><p class="bn-to" id="bnTo"></p></div>
+      <div><p class="bn-phase" id="bnPhase" hidden></p><p class="bn-title" id="bnTitle"></p><p class="bn-q" id="bnQ"></p><p class="bn-to" id="bnTo"></p></div>
+      <div class="bn-timer" id="bnTimer" hidden></div>
     </section>
     <div class="empty" id="empty">這一題還沒有人送出<small>打開街景開始找吧</small></div>
     <div class="grid" id="grid"></div>
@@ -149,60 +163,121 @@ try{ const q=qrcode(0,"M"); q.addData(studentURL); q.make();
   $("qrcode").innerHTML = q.createSvgTag({cellSize:8,margin:0,scalable:true}); }
 catch(e){ $("qrcode").textContent = "QR code 載入失敗"; }
 
-let items = [], current = 0, showAll = false, pending = false;
+const THX_SEC = Number(window.THANKS_SECONDS) || 60;
+let items = [], current = 0, phase = "find", phaseAt = 0, clockOffset = 0, showAll = false, pending = false;
 const imgCache = {}, cards = {};
-const numText = n => "第" + (NUM[n-1]||n) + "題";
+const LABELS = (()=>{ let k=0; return MS.map(m=> m.practice ? "試玩題" : "第"+(NUM[k++]||k)+"題"); })();
+const numText = n => LABELS[n-1] || ("第"+n+"題");
+let scored = [];   // 有正確答案、要排名的題目代號（從 Code.gs 來）
+const fmt = sec => Math.floor(sec/60) + ":" + String(sec%60).padStart(2,"0");
+/* 步驟：0 尚未開始；第 n 題搶答 = 2n-1；第 n 題寫謝謝 = 2n */
+const stepOf = (c,p) => c <= 0 ? 0 : (p === "thanks" ? 2*c : 2*c-1);
+const stateOf = st => st <= 0 ? {current:0, phase:"find"} : {current:Math.ceil(st/2), phase: st % 2 ? "find" : "thanks"};
+const MAXSTEP = 2*MS.length;
 
-function makeCard(it){
-  const c = document.createElement("article"); c.className = "card";
-  if(it.img){
+function makeCard(it, rank, elapsed){
+  const c = document.createElement("article"); c.className = "card" + (rank && rank <= 3 ? " r"+rank : "");
+  const hasImg = it.img && it.type !== "thanks";
+  const rk = rank ? Object.assign(document.createElement("span"),{className: hasImg ? "rank" : "rank inline", textContent: "第 "+rank+" 名"}) : null;
+  if(rk && hasImg) c.appendChild(rk);
+  if(hasImg){
     const ph = document.createElement("div"); ph.className="ph"; ph.textContent="截圖載入中…"; c.appendChild(ph);
     loadImg(it.img).then(src=>{ if(!src){ph.textContent="截圖讀取失敗";return;} const im=new Image(); im.alt=(it.name||"")+" 的街景截圖"; im.src=src; ph.replaceWith(im); });
   }
   const tx = document.createElement("div"); tx.className="tx";
   const top = document.createElement("div"); top.className="top";
   const w = document.createElement("span"); w.className="who"; w.textContent = it.name || "無名小卒";
-  const t = document.createElement("span"); t.className="tag"; const mi = Number(it.mission)-1;
-  t.textContent = numText(mi+1)+(MS[mi]&&MS[mi].title?"．"+MS[mi].title:"");
+  const mi = Number(it.mission)-1;
+  const t = document.createElement("span"); t.className="tag";
+  if(elapsed != null){ t.className = "el"; t.textContent = "用時 " + fmt(elapsed); }
+  else t.textContent = numText(mi+1)+(MS[mi]&&MS[mi].title?"．"+MS[mi].title:"");
+  if(rk && !hasImg) top.append(rk);
   top.append(w,t); tx.appendChild(top);
-  if(it.thanks){
+  if(it.type === "thanks" && it.thanks){
     const q=document.createElement("blockquote"); q.className="thx";
     const to=document.createElement("span"); to.className="to"; to.textContent="給 "+(it.thanksTo||(MS[mi]&&MS[mi].thanksTo)||"你");
     const p=document.createElement("p"); p.textContent=it.thanks;
     q.append(to,p); tx.appendChild(q);
   }
-  if(it.answer){ const a=document.createElement("p"); a.className="ans"; a.textContent=(it.thanks?"答案：":"")+it.answer; tx.appendChild(a); }
+  if(it.type !== "thanks" && it.answer){ const a=document.createElement("p"); a.className="ans"; a.textContent=it.answer; tx.appendChild(a); }
   c.appendChild(tx);
   return c;
 }
 
 function renderBanner(){
   const no = $("bnNo"); no.replaceChildren();
+  const ph = $("bnPhase"), tm = $("bnTimer");
   if(current === 0){
     $("bnTitle").textContent = "準備開始";
     $("bnQ").textContent = "掃左邊的 QR code，先填好名字，等主持人開始第壹題。";
-    $("bnTo").textContent = "";
+    $("bnTo").textContent = ""; ph.hidden = true; tm.hidden = true;
     $("curLabel").textContent = "目前：尚未開始";
   }else{
     const m = MS[current-1] || {};
     Array.from(numText(current)).forEach(ch=>{ const s=document.createElement("span"); s.textContent=ch; no.appendChild(s); });
     $("bnTitle").textContent = m.title || "";
-    $("bnQ").textContent = m.question || "";
-    $("bnTo").textContent = m.thanksTo ? "寫一句謝謝給：" + m.thanksTo : "";
-    $("curLabel").textContent = "目前：" + numText(current) + "（共 " + MS.length + " 題）";
+    ph.hidden = false;
+    if(phase === "find"){
+      ph.textContent = "搶答中．找到就送出"; ph.classList.remove("thx");
+      $("bnQ").textContent = m.question || ""; $("bnTo").textContent = ""; tm.hidden = true;
+    }else{
+      ph.textContent = "寫一句謝謝"; ph.classList.add("thx");
+      $("bnQ").textContent = m.thanksLead || "";
+      $("bnTo").textContent = m.thanksTo ? "寫一句謝謝給：" + m.thanksTo : "";
+      tm.hidden = false;
+    }
+    $("curLabel").textContent = "目前：" + numText(current) + (phase==="find"?"．搶答":"．寫謝謝") + "（共 " + MS.filter(m=>!m.practice).length + " 題" + (MS.some(m=>m.practice)?"＋試玩":"") + "）";
   }
-  $("prev").disabled = current <= 0;
-  $("next").disabled = current >= MS.length;
-  $("next").textContent = current === 0 ? "開始" + numText(1) + " ▶" : (current >= MS.length ? "已是最後一題" : "下一題 ▶");
+  $("banner").classList.toggle("timed", !tm.hidden);
+  const st = stepOf(current, phase);
+  $("prev").disabled = st <= 0;
+  $("next").disabled = st >= MAXSTEP;
+  const nx = stateOf(st+1);
+  $("next").textContent = st >= MAXSTEP ? "全部結束" : (nx.phase === "thanks" ? "結束搶答，寫謝謝 ▶" : (st === 0 ? "開始" : "下一題：") + numText(nx.current) + " ▶");
+  tick();
 }
+function tick(){
+  const tm = $("bnTimer");
+  if(current < 1 || phase !== "thanks") return;
+  const left = Math.max(0, Math.round(THX_SEC - (Date.now() + clockOffset - phaseAt)/1000));
+  tm.textContent = left > 0 ? fmt(left) : "時間到";
+  tm.classList.toggle("over", left === 0);
+}
+setInterval(tick, 1000);
 
 function render(){
   renderBanner();
-  const shown = items.filter(it=> showAll || Number(it.mission) === current).slice().reverse();
+  const grid = $("grid");
+  let shown, label;
+  if(showAll){
+    shown = items.slice().reverse().map(it=>({it})); label = "則投稿（全部題目）";
+  }else if(phase === "find"){
+    const m = MS[current-1] || {}, isScored = scored.includes(m.id);
+    const seen = {};
+    const el = it => phaseAt && it.ts ? Math.max(0, Math.round((it.ts - phaseAt)/1000)) : null;
+    let list = items.filter(it=>it.type!=="thanks" && Number(it.mission)===current).sort((a,b)=>(a.ts||0)-(b.ts||0));
+    if(isScored){
+      shown = list.filter(it=>it.correct==="O")
+        .filter(it=>{ const k=(it.name||"").trim(); if(seen[k]) return false; seen[k]=1; return true; })
+        .map((it,i)=>({it, rank:i+1, elapsed: el(it)}));
+      label = "組答對．這一題";
+    }else{
+      shown = list.slice().reverse().map(it=>({it, elapsed: el(it)}));
+      label = "則投稿．這一題";
+    }
+  }else{
+    shown = items.filter(it=>it.type==="thanks" && Number(it.mission)===current).slice().reverse().map(it=>({it}));
+    label = "則感謝．這一題";
+  }
+  grid.classList.toggle("race", !showAll && phase === "find");
   $("total").textContent = shown.length;
-  $("countLabel").textContent = showAll ? "則感謝已送達（全部題目）" : (current ? "則感謝．這一題" : "則感謝已送達");
+  $("countLabel").textContent = current === 0 && !showAll ? "則感謝已送達" : label;
   $("empty").hidden = shown.length > 0 || current === 0;
-  $("grid").replaceChildren(...shown.map(it=> cards[it.key] || (cards[it.key] = makeCard(it))));
+  $("empty").firstChild.textContent = phase === "find" ? (scored.includes((MS[current-1]||{}).id) ? "還沒有人答對" : "還沒有人送出") : "還沒有人送出感謝";
+  grid.replaceChildren(...shown.map(x=>{
+    const k = x.it.key + "|" + (x.rank||"") + "|" + (x.elapsed==null?"":x.elapsed);
+    return cards[k] || (cards[k] = makeCard(x.it, x.rank, x.elapsed));
+  }));
 }
 
 const queue = []; let busy = false;
@@ -225,21 +300,25 @@ async function pump(){
 async function poll(){
   const st = $("status");
   try{
-    let list, cur;
+    let list, st0;
     if(!URL_){
       list = store.get("thanks-demo",[]).map(x=>Object.assign({},x,{img:x.image||""}));
-      cur = store.get("thanks-current",0);
+      st0 = store.get("thanks-state",{current:0,phase:"find",at:0});
       st.textContent = "試玩模式：只顯示這台裝置送出的內容";
     }else{
       const r = await fetch(URL_+"?list=1&t="+Date.now()); const j = await r.json();
       if(!j.ok) throw new Error(j.error);
-      list = j.items; cur = j.current;
+      list = j.items; st0 = {current:j.current, phase:j.phase, at:j.at};
+      if(j.now) clockOffset = j.now - Date.now();
+      if(Array.isArray(j.scored)) scored = j.scored;
       st.textContent = "已連線．"+new Date().toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit",second:"2-digit"})+" 更新";
     }
-    list.forEach(x=>x.key = x.id || ("n"+x.n));
-    const changed = list.length!==items.length || list.some((x,i)=>!items[i]||items[i].key!==x.key);
+    list.forEach(x=>{ x.key = x.id || ("n"+x.n); if(!x.type) x.type = (x.thanks && !x.answer && !x.img) ? "thanks" : "answer"; });
+    const sig = x => x.key + (x.correct||"");
+    const changed = list.length!==items.length || list.some((x,i)=>!items[i]||sig(items[i])!==sig(x));
     items = list;
-    if(!pending && Number(cur) !== current){ current = Number(cur)||0; render(); }
+    const nc = Number(st0.current)||0, np = st0.phase === "thanks" ? "thanks" : "find", na = Number(st0.at)||0;
+    if(!pending && (nc !== current || np !== phase || na !== phaseAt)){ current = nc; phase = np; phaseAt = na; render(); }
     else if(changed) render();
   }catch(e){
     st.textContent = "連線失敗，自動重試中…";
@@ -248,35 +327,37 @@ async function poll(){
 
 /* ---- 主持人換題 ---- */
 function hostMsg(t){ const m=$("hostmsg"); m.textContent=t||""; m.hidden=!t; }
-async function setCurrent(n){
-  n = Math.max(0, Math.min(MS.length, n));
-  if(n === current) return;
-  const before = current;
-  current = n; render(); hostMsg("");
-  if(!URL_){ store.set("thanks-current", n); return; }
+async function setStep(st){
+  st = Math.max(0, Math.min(MAXSTEP, st));
+  const target = stateOf(st);
+  if(target.current === current && target.phase === phase) return;
+  const before = {current, phase, phaseAt};
+  current = target.current; phase = target.phase; phaseAt = Date.now() + clockOffset; render(); hostMsg("");
+  if(!URL_){ store.set("thanks-state",{current, phase, at:phaseAt}); return; }
   const key = store.get("thanks-hostkey","");
-  if(!key){ current = before; render(); $("keybox").hidden = false; $("hostkey").focus(); hostMsg("先輸入主持密碼（Code.gs 裡的 HOST_KEY）。"); return; }
+  const undo = ()=>{ current = before.current; phase = before.phase; phaseAt = before.phaseAt; render(); };
+  if(!key){ undo(); $("keybox").hidden = false; $("hostkey").focus(); hostMsg("先輸入主持密碼（Code.gs 裡的 HOST_KEY）。"); return; }
   pending = true;
   try{
-    const r = await fetch(URL_,{method:"POST",body:JSON.stringify({action:"setCurrent",current:n,key})});
+    const r = await fetch(URL_,{method:"POST",body:JSON.stringify({action:"setState",current:target.current,phase:target.phase,key})});
     const j = await r.json();
     if(!j.ok){
-      current = before; render();
+      undo();
       if(j.error === "wrong key"){ store.set("thanks-hostkey",""); $("keybox").hidden = false; hostMsg("主持密碼不對，請重新輸入。"); }
       else hostMsg("換題失敗，請再按一次。");
-    }
-  }catch(e){ current = before; render(); hostMsg("網路不穩，換題失敗，請再按一次。"); }
+    } else if(j.at){ phaseAt = j.at; render(); }
+  }catch(e){ undo(); hostMsg("網路不穩，換題失敗，請再按一次。"); }
   pending = false;
 }
-$("prev").addEventListener("click",()=>setCurrent(current-1));
-$("next").addEventListener("click",()=>setCurrent(current+1));
+$("prev").addEventListener("click",()=>setStep(stepOf(current,phase)-1));
+$("next").addEventListener("click",()=>setStep(stepOf(current,phase)+1));
 $("savekey").addEventListener("click",()=>{ const k=$("hostkey").value.trim(); if(!k) return; store.set("thanks-hostkey",k); $("hostkey").value=""; $("keybox").hidden=true; hostMsg(""); });
 $("hostkey").addEventListener("keydown",e=>{ if(e.key==="Enter") $("savekey").click(); });
 $("showAll").addEventListener("change",e=>{ showAll = e.target.checked; render(); });
 document.addEventListener("keydown",e=>{
   if(e.target.closest("input,textarea")) return;
-  if(["ArrowRight","PageDown"].includes(e.key)){ e.preventDefault(); setCurrent(current+1); }
-  if(["ArrowLeft","PageUp"].includes(e.key)){ e.preventDefault(); setCurrent(current-1); }
+  if(["ArrowRight","PageDown"].includes(e.key)){ e.preventDefault(); setStep(stepOf(current,phase)+1); }
+  if(["ArrowLeft","PageUp"].includes(e.key)){ e.preventDefault(); setStep(stepOf(current,phase)-1); }
 });
 
 render(); poll(); setInterval(poll, URL_?5000:1500);

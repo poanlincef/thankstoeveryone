@@ -70,12 +70,6 @@ button:focus-visible,a:focus-visible,.upload:focus-within{outline:3px solid var(
 .wait p{margin:0;font-family:var(--f-serif);font-size:1.1rem;font-weight:700}
 .dot{width:10px;height:10px;border-radius:50%;background:var(--grid);flex:none;animation:pulse 1.4s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
-details.thx > summary{cursor:pointer;font-weight:700;color:var(--grid);list-style:none;display:flex;align-items:center;gap:8px}
-details.thx > summary::-webkit-details-marker{display:none}
-details.thx > summary::before{content:"";width:.5em;height:.5em;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform .2s}
-details.thx[open] > summary::before{transform:rotate(45deg)}
-details.thx[open] > summary{margin-bottom:6px}
-details.thx .thx-field{margin-top:8px}
 .mhead .h2{margin:0;font-family:var(--f-serif);font-size:1.25rem;font-weight:700}
 .chip{font-size:.75rem;padding:2px 10px;border:1px solid var(--grid-soft);color:var(--muted);white-space:nowrap}
 .chip.ok{background:var(--done);border-color:var(--done);color:#fff}
@@ -93,11 +87,19 @@ details.thx .thx-field{margin-top:8px}
 .thumb{width:72px;height:72px;object-fit:cover;flex:none;border:1px solid var(--grid-soft)}
 .uptext{display:flex;flex-direction:column;min-width:0}
 .rm{margin-left:auto;appearance:none;border:0;background:none;color:var(--muted);font:500 .85rem var(--f-sans);text-decoration:underline;cursor:pointer;padding:6px}
-.thx{border-top:1.5px dashed var(--grid);padding-top:14px}
+.thx{border-top:1.5px dashed var(--grid);padding-top:14px;display:flex;flex-direction:column;gap:10px}
 .thx-lead{margin:0;font-family:var(--f-serif);font-size:1.05rem;font-weight:700;color:var(--grid)}
 .thx-label{display:block}
 .thx-to{display:block;font-family:var(--f-serif);font-size:1.15rem;font-weight:700;color:var(--ink);margin-top:2px}
 .thx-ta{background:#FBFDFC}
+.part{display:flex;flex-direction:column;gap:12px}
+.locked{margin:0;font-size:.88rem;color:var(--muted);background:var(--paper);padding:8px 10px}
+.timer{display:flex;align-items:center;gap:8px;font-family:var(--f-serif);font-weight:700;font-size:1rem;color:var(--ink)}
+.timer b{font-size:1.5rem;color:var(--grid);font-variant-numeric:tabular-nums}
+.timer.over b{color:var(--warn)}
+.thx.soon{border-top-style:dotted}
+.thx.soon .soon-text{margin:0;font-size:.88rem;color:var(--muted)}
+.btn.send.thx-send{background:var(--ink)}
 .msg{margin:0;font-size:.88rem}
 .msg.err{color:var(--warn)}
 .msg.ok{color:var(--done)}
@@ -116,8 +118,8 @@ footer{text-align:center;font-size:.8rem;color:var(--muted);font-family:var(--f-
 
   <section class="how" aria-label="怎麼玩">
     <div><b>一　開街景</b>按每一題的「打開街景」，在 Google 地圖裡走到題目的地方。</div>
-    <div><b>二　找、截圖</b>找到答案或那個人，用手機截圖。</div>
-    <div><b>三　說謝謝</b>寫下答案，再寫一句謝謝給你想到的人，送出就會上大螢幕。題目會一題一題開放。</div>
+    <div><b>二　搶答</b>找到答案或那個人就截圖送出，越快送出排名越前面。</div>
+    <div><b>三　說謝謝</b>搶答結束後有一分鐘，寫一句謝謝給你想到的人。題目由主持人一題一題開放。</div>
   </section>
 
   <p class="demo" id="demo" hidden>試玩模式：還沒接上收件的試算表，送出的內容只會存在這支手機。</p>
@@ -142,28 +144,36 @@ footer{text-align:center;font-size:.8rem;color:var(--muted);font-family:var(--f-
     <div class="body">
       <button type="button" class="mhead" aria-expanded="true"><span class="h2" role="heading" aria-level="2"></span><span class="chip">還沒送出</span><span class="fold" aria-hidden="true"></span></button>
       <p class="q"></p>
-      <p class="tip"></p>
-      <a class="btn map" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
-        <span>打開街景</span>
-      </a>
-      <label class="field ans">你的答案
-        <textarea maxlength="120" rows="2"></textarea>
-      </label>
-      <label class="upload">
-        <input type="file" accept="image/*">
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>
-        <span class="uptext"><span class="uplabel">附上街景截圖</span><span class="need"></span></span>
-      </label>
-      <details class="thx" open>
-        <summary>感謝的話</summary>
-        <p class="thx-lead"></p>
-        <label class="field thx-field"><span class="thx-label">寫一句謝謝給<b class="thx-to"></b></span>
-          <textarea class="thx-ta" maxlength="80" rows="2" placeholder="例：謝謝你每天早上準時出現。"></textarea>
+      <div class="part find">
+        <p class="tip"></p>
+        <a class="btn map" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+          <span>打開街景</span>
+        </a>
+        <label class="field ans">你的答案
+          <textarea maxlength="120" rows="2"></textarea>
         </label>
-      </details>
-      <button class="btn send" type="button">送出這一題</button>
-      <p class="msg" role="status" aria-live="polite"></p>
+        <label class="upload">
+          <input type="file" accept="image/*">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>
+          <span class="uptext"><span class="uplabel">附上街景截圖</span><span class="need"></span></span>
+        </label>
+        <button class="btn send ans-send" type="button">搶答送出</button>
+        <p class="msg ans-msg" role="status" aria-live="polite"></p>
+      </div>
+      <p class="locked" hidden>搶答時間結束了。</p>
+      <div class="thx">
+        <p class="thx-lead"></p>
+        <p class="soon-text" hidden>搶答結束後，這裡會打開讓你寫一句謝謝。</p>
+        <div class="thx-open">
+          <div class="timer" hidden><span>寫謝謝時間</span><b class="tleft">1:00</b></div>
+          <label class="field thx-field"><span class="thx-label">寫一句謝謝給<b class="thx-to"></b></span>
+            <textarea class="thx-ta" maxlength="80" rows="3" placeholder="例：謝謝你每天早上準時出現。"></textarea>
+          </label>
+          <button class="btn send thx-send" type="button">送出感謝</button>
+          <p class="msg thx-msg" role="status" aria-live="polite"></p>
+        </div>
+      </div>
     </div>
   </article>
 </template>
@@ -185,7 +195,10 @@ document.querySelectorAll("[data-vt]").forEach(function(el){
 (function(){
 const MS = Array.isArray(window.MISSIONS) ? window.MISSIONS : [];
 const URL_ = (window.SCRIPT_URL || "").trim();
+const THX_SEC = Number(window.THANKS_SECONDS) || 60;
 const NUM = ["壹","貳","參","肆","伍","陸","柒","捌","玖","拾"];
+/* 題號：試玩題顯示「試玩題」，其他照順序 第壹題、第貳題… */
+const LABELS = (()=>{ let k=0; return MS.map(m=> m.practice ? "試玩題" : "第"+(NUM[k++]||k)+"題"); })();
 const store = {
   get(k,d){ try{ const v = localStorage.getItem(k); return v==null ? d : JSON.parse(v); }catch(e){ return d; } },
   set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
@@ -194,69 +207,62 @@ const who = document.getElementById("who");
 who.value = store.get("thanks-name","");
 who.addEventListener("input",()=>store.set("thanks-name",who.value.trim()));
 if(!URL_) document.getElementById("demo").hidden = false;
-const done = store.get("thanks-done",{});
+const doneA = store.get("thanks-doneA",{}), doneT = store.get("thanks-doneT",{});
 
 function uid(){ return (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+Math.random().toString(36).slice(2)); }
-
 function compress(file){
   return new Promise((res,rej)=>{
     const url = URL.createObjectURL(file), img = new Image();
     img.onload = ()=>{
-      const max = 1100, s = Math.min(1, max/Math.max(img.width,img.height));
+      const max = 1100, k = Math.min(1, max/Math.max(img.width,img.height));
       const c = document.createElement("canvas");
-      c.width = Math.round(img.width*s); c.height = Math.round(img.height*s);
+      c.width = Math.round(img.width*k); c.height = Math.round(img.height*k);
       c.getContext("2d").drawImage(img,0,0,c.width,c.height);
-      URL.revokeObjectURL(url);
-      res(c.toDataURL("image/jpeg",.78));
+      URL.revokeObjectURL(url); res(c.toDataURL("image/jpeg",.78));
     };
     img.onerror = ()=>{ URL.revokeObjectURL(url); rej(new Error("bad image")); };
     img.src = url;
   });
 }
-
 async function send(payload){
   if(!URL_){
     const list = store.get("thanks-demo",[]);
-    list.push(Object.assign({n:list.length+1,time:new Date().toISOString()},payload));
-    store.set("thanks-demo",list);
-    return;
+    list.push(Object.assign({n:list.length+1,ts:Date.now()},payload));
+    store.set("thanks-demo",list); return {ok:true, correct:""};
   }
   const r = await fetch(URL_,{method:"POST",body:JSON.stringify(payload)});
   const j = await r.json();
   if(!j.ok) throw new Error(j.error || "server");
+  return j;
 }
 
 const box = document.getElementById("missions"), tpl = document.getElementById("tpl");
 const cards = [];
 MS.forEach((m,i)=>{
   const el = tpl.content.firstElementChild.cloneNode(true);
-  const $ = s => el.querySelector(s);
-  { const b=$(".no b"); b.setAttribute("aria-label","第"+(i+1)+"題"); Array.from("第"+(NUM[i]||i+1)+"題").forEach(ch=>{const sp=document.createElement("span");sp.textContent=ch;sp.setAttribute("aria-hidden","true");b.appendChild(sp);}); }
+  const $ = q => el.querySelector(q);
+  { const b=$(".no b"); b.setAttribute("aria-label",LABELS[i]); Array.from(LABELS[i]).forEach(ch=>{const sp=document.createElement("span");sp.textContent=ch;sp.setAttribute("aria-hidden","true");b.appendChild(sp);}); }
   $(".h2").textContent = m.title || ("第 "+(i+1)+" 題");
   $(".q").textContent = m.question || "";
   if(m.hint) $(".tip").textContent = m.hint; else $(".tip").hidden = true;
   $(".map").href = m.map || "https://www.google.com/maps";
   const photo = m.photo || "optional";
-  const ta = $(".ans textarea"); ta.id = "ans"+i;
   const askAnswer = m.askAnswer !== false;
+  const ta = $(".ans textarea"); ta.id = "ans"+i; $(".ans").htmlFor = ta.id;
   if(!askAnswer) $(".ans").hidden = true;
-  const tta = $(".thx-ta"); tta.id = "thx"+i; $(".thx-field").htmlFor = tta.id;
-  if(m.thanksTo){
-    $(".thx-to").textContent = m.thanksTo;
-    $(".thx-lead").textContent = m.thanksLead || "找到了嗎？這讓你想到誰？";
-  } else $(".thx").hidden = true;
-  $(".ans").htmlFor = ta.id;
   if(photo==="required") $(".ans").firstChild.textContent = "你的答案（選填）";
   const up = $(".upload"), file = $(".upload input"); file.id = "img"+i;
   if(photo==="none") up.hidden = true;
   $(".need").textContent = photo==="required" ? "這題一定要附截圖" : "可以不附";
-  const chip = $(".chip"), msg = $(".msg"), btn = $(".send");
+  const tta = $(".thx-ta"); tta.id = "thx"+i; $(".thx-field").htmlFor = tta.id;
+  $(".thx-to").textContent = m.thanksTo || "一個你想謝謝的人";
+  $(".thx-lead").textContent = m.thanksLead || "這讓你想到誰？";
+  const chip = $(".chip");
   let image = null;
-  if(done[i]){ chip.textContent = "已送出 ✓"; chip.classList.add("ok"); }
 
   file.addEventListener("change", async ()=>{
     const f = file.files[0]; if(!f) return;
-    msg.className = "msg"; msg.textContent = "照片處理中…";
+    const msg = $(".ans-msg"); msg.className = "msg ans-msg"; msg.textContent = "照片處理中…";
     try{
       image = await compress(f);
       up.classList.add("has");
@@ -265,79 +271,129 @@ MS.forEach((m,i)=>{
         const rm = document.createElement("button"); rm.type="button"; rm.className="rm"; rm.textContent="移除";
         rm.addEventListener("click",e=>{ e.preventDefault(); image=null; t.remove(); rm.remove(); up.classList.remove("has"); up.querySelector("svg").hidden=false; up.querySelector(".uplabel").textContent="附上街景截圖"; file.value=""; });
         up.appendChild(rm); }
-      t.src = image;
-      up.querySelector(".uplabel").textContent = "已選好截圖";
-      msg.textContent = "";
-    }catch(e){
-      msg.className = "msg err"; msg.textContent = "這張圖讀不進來，請換一張截圖（JPG 或 PNG）。";
-    }
+      t.src = image; up.querySelector(".uplabel").textContent = "已選好截圖"; msg.textContent = "";
+    }catch(e){ msg.className = "msg ans-msg err"; msg.textContent = "這張圖讀不進來，請換一張截圖（JPG 或 PNG）。"; }
   });
 
-  btn.addEventListener("click", async ()=>{
-    const name = who.value.trim(), answer = askAnswer ? ta.value.trim() : "", thanks = tta.value.trim();
-    msg.className = "msg err";
-    if(!name){ msg.textContent = "先在最上面填你的名字或小隊名。"; who.focus(); return; }
+  function needName(msg){
+    const name = who.value.trim();
+    if(!name){ msg.className = msg.className.replace(/ (err|ok)/g,"")+" err"; msg.textContent = "先在最上面填你的名字或小隊名。"; who.focus(); }
+    return name;
+  }
+  function setChip(){
+    const n = i+1;
+    chip.classList.remove("ok","live");
+    if(n === current && phase === "find"){ chip.textContent = doneA[i] ? "已搶答 ✓" : "搶答中"; chip.classList.add(doneA[i]?"ok":"live"); }
+    else if(n === current){ chip.textContent = doneT[i] ? "已送出感謝 ✓" : "寫謝謝中"; chip.classList.add(doneT[i]?"ok":"live"); }
+    else { chip.textContent = doneT[i] ? "已送出感謝 ✓" : "點開補寫謝謝"; if(doneT[i]) chip.classList.add("ok"); }
+  }
+
+  $(".ans-send").addEventListener("click", async ()=>{
+    const btn = $(".ans-send"), msg = $(".ans-msg");
+    const name = needName(msg); if(!name) return;
+    const answer = askAnswer ? ta.value.trim() : "";
+    msg.className = "msg ans-msg err";
     if(photo==="required" && !image){ msg.textContent = "這題要附上街景截圖。"; return; }
     if(askAnswer && !answer && !image){ msg.textContent = "寫下答案或附上截圖再送出。"; ta.focus(); return; }
-    if(m.thanksTo && !thanks){ msg.textContent = "最後寫一句謝謝再送出。"; $(".thx").open = true; tta.focus(); return; }
-    btn.disabled = true; btn.textContent = "送出中…"; msg.className = "msg"; msg.textContent = "";
+    btn.disabled = true; btn.textContent = "送出中…"; msg.className = "msg ans-msg"; msg.textContent = "";
     try{
-      await send({id:uid(), name, mission:i+1, title:m.title||"", answer, thanks, thanksTo:m.thanksTo||"", image});
-      done[i] = true; store.set("thanks-done",done);
-      chip.textContent = "已送出 ✓"; chip.classList.remove("live"); chip.classList.add("ok");
-      msg.className = "msg ok"; msg.textContent = "送出了！抬頭看看大螢幕。想補充可以改完再送一次。";
-      btn.textContent = "再送一次";
-    }catch(e){
-      msg.className = "msg err"; msg.textContent = "沒有送出去，請確認網路後再按一次。";
-      btn.textContent = "送出這一題";
-    }
+      const j = await send({type:"answer", id:uid(), name, mission:i+1, mid:m.id||"", title:m.title||"", answer, image});
+      if(j.correct === "X"){
+        msg.className = "msg ans-msg err"; msg.textContent = "答案好像不太對，再找找看，改好可以再送一次。";
+        btn.textContent = "搶答送出";
+      }else{
+        doneA[i] = j.correct === "O" ? "O" : true; store.set("thanks-doneA",doneA); setChip();
+        msg.className = "msg ans-msg ok";
+        msg.textContent = j.correct === "O" ? "答對了！看看大螢幕上的排名。" : "送出了！抬頭看看大螢幕。";
+        btn.textContent = "修改後再送一次";
+      }
+    }catch(e){ msg.className = "msg ans-msg err"; msg.textContent = "沒有送出去，請確認網路後再按一次。"; btn.textContent = "搶答送出"; }
     btn.disabled = false;
   });
+
+  $(".thx-send").addEventListener("click", async ()=>{
+    const btn = $(".thx-send"), msg = $(".thx-msg");
+    const name = needName(msg); if(!name) return;
+    const thanks = tta.value.trim();
+    if(!thanks){ msg.className = "msg thx-msg err"; msg.textContent = "寫一句謝謝再送出。"; tta.focus(); return; }
+    btn.disabled = true; btn.textContent = "送出中…"; msg.className = "msg thx-msg"; msg.textContent = "";
+    try{
+      await send({type:"thanks", id:uid(), name, mission:i+1, title:m.title||"", thanks, thanksTo:m.thanksTo||""});
+      doneT[i] = true; store.set("thanks-doneT",doneT); setChip();
+      msg.className = "msg thx-msg ok"; msg.textContent = "謝謝你的謝謝，已經送上大螢幕。";
+      btn.textContent = "再寫一句";
+    }catch(e){ msg.className = "msg thx-msg err"; msg.textContent = "沒有送出去，請確認網路後再按一次。"; btn.textContent = "送出感謝"; }
+    btn.disabled = false;
+  });
+
   const head = $(".mhead");
   head.addEventListener("click",()=>{ const c = !el.classList.contains("collapsed"); el.classList.toggle("collapsed",c); head.setAttribute("aria-expanded",!c); });
   el.hidden = true;
-  cards.push({el, head, chip});
+  cards.push({el, head, setChip, $});
   box.appendChild(el);
 });
 
-/* ---- 主持人控制目前題號 ---- */
-let current = -1;
-function applyState(cur){
+/* ---- 主持人控制：目前題號 current、階段 phase（find 搶答 / thanks 寫謝謝） ---- */
+let current = -1, phase = "find", phaseAt = 0, clockOffset = 0;
+function applyState(cur, ph, at){
   cur = Math.max(0, Math.min(MS.length, Number(cur)||0));
-  if(cur === current) return;
-  const first = current === -1, advanced = cur > current;
-  current = cur;
+  ph = ph === "thanks" ? "thanks" : "find";
+  if(cur === current && ph === phase && at === phaseAt) return;
+  const first = current === -1, moved = cur !== current || ph !== phase;
+  current = cur; phase = ph; phaseAt = Number(at)||0;
   cards.forEach((c,i)=>{
-    const n = i+1;
+    const n = i+1, live = n === cur, past = n < cur;
     c.el.hidden = n > cur;
-    c.el.classList.toggle("live", n === cur);
-    c.el.classList.toggle("past", n < cur);
-    c.el.style.order = n === cur ? 0 : (cur - n) + 1;
-    const collapsed = n < cur;
-    c.el.classList.toggle("collapsed", collapsed);
-    c.head.setAttribute("aria-expanded", !collapsed);
-    if(!done[i]){ c.chip.textContent = n === cur ? "進行中" : "已結束．點開補寫"; c.chip.classList.toggle("live", n === cur); }
+    c.el.classList.toggle("live", live);
+    c.el.classList.toggle("past", past);
+    c.el.style.order = live ? 0 : (cur - n) + 1;
+    const findOpen = live && ph === "find";
+    c.$(".find").hidden = !findOpen;
+    c.$(".locked").hidden = findOpen;
+    c.$(".locked").textContent = doneA[i] === "O" ? "搶答時間結束了，你答對了 ✓" : (doneA[i] ? "搶答時間結束了，你有送出答案 ✓" : "搶答時間結束了。");
+    const thxOpen = !(live && ph === "find");
+    c.$(".thx-open").hidden = !thxOpen;
+    c.$(".soon-text").hidden = thxOpen;
+    c.$(".thx").classList.toggle("soon", !thxOpen);
+    c.$(".timer").hidden = !(live && ph === "thanks");
+    if(moved){
+      const collapsed = past;
+      c.el.classList.toggle("collapsed", collapsed);
+      c.head.setAttribute("aria-expanded", !collapsed);
+    }
+    c.setChip();
   });
   const wait = document.getElementById("wait"), wt = document.getElementById("waitText");
   wait.style.order = 1;
-  if(cur === 0){ wait.hidden = false; wait.style.order = 0; wt.textContent = "等主持人開始第" + NUM[0] + "題"; }
-  else if(cur < MS.length){ wait.hidden = false; wt.textContent = "下一題準備中，主持人開放後會自動出現"; }
-  else { wait.hidden = true; }
-  if(!first && advanced && cur > 0){
-    const live = cards[cur-1].el;
-    live.scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"start"});
+  if(cur === 0){ wait.hidden = false; wait.style.order = 0; wt.textContent = "等主持人開始" + (LABELS[0]||"第壹題"); }
+  else if(cur < MS.length || ph === "find"){ wait.hidden = false; wt.textContent = ph === "find" ? "搶答結束後，會開放寫謝謝" : "下一題準備中，主持人開放後會自動出現"; }
+  else wait.hidden = true;
+  if(!first && moved && cur > 0){
+    const c = cards[cur-1];
+    const target = ph === "thanks" ? c.$(".thx") : c.el;
+    target.scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"start"});
   }
+  tick();
 }
+function tick(){
+  if(current < 1 || phase !== "thanks") return;
+  const c = cards[current-1]; if(!c) return;
+  const left = Math.max(0, Math.round(THX_SEC - (Date.now() + clockOffset - phaseAt)/1000));
+  const t = c.$(".timer");
+  t.classList.toggle("over", left === 0);
+  c.$(".tleft").textContent = left > 0 ? Math.floor(left/60) + ":" + String(left%60).padStart(2,"0") : "時間到，還可以送";
+}
+setInterval(tick, 1000);
 async function poll(){
   try{
-    if(!URL_){ applyState(store.get("thanks-current",0)); return; }
+    if(!URL_){ const st = store.get("thanks-state",{current:0,phase:"find",at:0}); applyState(st.current, st.phase, st.at); return; }
     const r = await fetch(URL_ + "?state=1&t=" + Date.now());
     const j = await r.json();
-    if(j.ok) applyState(j.current);
+    if(j.ok){ if(j.now) clockOffset = j.now - Date.now(); applyState(j.current, j.phase, j.at); }
   }catch(e){}
 }
 poll();
-setInterval(poll, URL_ ? 8000 : 1500);
+setInterval(poll, URL_ ? 6000 : 1500);
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden) poll(); });
 })();
 </script>
