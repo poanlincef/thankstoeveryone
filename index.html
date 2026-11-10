@@ -251,6 +251,7 @@ const store = {
 /* ---- 隊伍 ---- */
 const $id = x => document.getElementById(x);
 let me = store.get("thanks-team", null);   // {code, team, name, role, members}
+if(me && (!me.code || !me.team)) me = null;  // 舊版後端留下的空隊伍
 let teamDone = {};                           // 題號 → {by, correct}，隊上誰先送出
 function showTeam(){
   $id("teamSetup").hidden = !!me; $id("teamCard").hidden = !me;
@@ -290,6 +291,7 @@ $id("createBtn").addEventListener("click", async ()=>{
   const b = $id("createBtn"); b.disabled = true; b.textContent = "建立中…";
   try{
     const j = await teamCall({action:"createTeam", team, name});
+    if(j.ok && !j.code){ teamErr("後端還是舊版，沒有發隊伍代碼。請主持人把新的 Code.gs 部署成「新版本」。"); b.disabled = false; b.textContent = "建立隊伍"; return; }
     if(!j.ok) throw 0;
     me = {code:j.code, team:j.team, name, role:"leader", members:j.members}; store.set("thanks-team",me); resetDone(); teamDone = {}; showTeam(); refreshCards(false); poll();
   }catch(e){ teamErr("沒有建立成功，請確認網路後再按一次。"); }
@@ -302,7 +304,7 @@ $id("joinBtn").addEventListener("click", async ()=>{
   const b = $id("joinBtn"); b.disabled = true; b.textContent = "加入中…";
   try{
     const j = await teamCall({action:"joinTeam", code, name});
-    if(!j.ok){ teamErr(j.error==="no team" ? "找不到這個代碼，再跟組長確認一次。" : "沒有加入成功，請再按一次。"); }
+    if(!j.ok || !j.team){ teamErr(j.error==="no team" ? "找不到這個代碼，再跟組長確認一次。" : (j.ok ? "後端還是舊版，請主持人把新的 Code.gs 部署成「新版本」。" : "沒有加入成功，請再按一次。")); }
     else { me = {code:j.code, team:j.team, name, role:"member", members:j.members}; store.set("thanks-team",me); resetDone(); teamDone = {}; showTeam(); refreshCards(false); poll(); }
   }catch(e){ teamErr("沒有加入成功，請確認網路後再按一次。"); }
   b.disabled = false; b.textContent = "加入隊伍";
@@ -529,6 +531,7 @@ async function poll(){
     const j = await r.json();
     if(j.ok){
       if(j.now) clockOffset = j.now - Date.now();
+      if(me && j.noTeam){ me = null; teamDone = {}; store.set("thanks-team",null); resetDone(); showTeam(); setRole("leader"); teamErr("活動重新開始了，請重新組隊。"); }
       if(me && j.done) applyDone(j.done);
       if(me && Array.isArray(j.members)){ me.members = j.members; store.set("thanks-team",me); showTeam(); }
       applyState(j.current, j.phase, j.at);
