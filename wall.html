@@ -130,6 +130,19 @@ body.has-ticker main{padding-bottom:96px}
 @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @media (prefers-reduced-motion:reduce){.track{animation:none;flex-wrap:wrap;white-space:normal}.run[aria-hidden]{display:none}}
 @media (max-width:760px){.ticker{left:0}}
+.ansd summary{cursor:pointer;font-size:.85rem;color:var(--muted);list-style:none}
+.ansd summary::-webkit-details-marker{display:none}
+.ansd summary::before{content:"▸ "}
+.ansd[open] summary::before{content:"▾ "}
+.ansd .ans{margin-top:4px}
+.card .ph.secret{aspect-ratio:4/3;background:repeating-linear-gradient(45deg,var(--grid-soft) 0 10px,#fff 10px 20px);color:var(--ink);font-weight:700}
+.card .ans.secret{color:var(--muted);font-size:.95rem}
+.reveal{margin-bottom:24px;background:rgba(255,255,255,.75);border:1.5px dashed var(--grid);padding:14px 16px}
+.revealt{margin:0 0 10px;font-family:var(--f-serif);font-weight:900;font-size:1.3rem;color:var(--grid)}
+.revealgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;align-items:start}
+.revealgrid .card{margin:0}
+.revealgrid .card .ans{font-size:1rem}
+.revealmore{margin:8px 0 0;font-size:.85rem;color:var(--muted)}
 .status{font-size:.8rem;color:var(--muted);margin-top:auto}
 main{overflow:auto;padding:28px;min-width:0}
 .grid{columns:300px;column-gap:20px}
@@ -198,6 +211,11 @@ main{overflow:auto;padding:28px;min-width:0}
       <div><p class="bn-phase" id="bnPhase" hidden></p><p class="bn-title" id="bnTitle"></p><p class="bn-q" id="bnQ"></p><p class="bn-to" id="bnTo"></p></div>
       <div class="bn-timer" id="bnTimer" hidden></div>
     </section>
+    <section class="reveal" id="reveal" hidden aria-label="答案揭曉">
+      <p class="revealt">答案揭曉</p>
+      <div class="revealgrid" id="revealGrid"></div>
+      <p class="revealmore" id="revealMore"></p>
+    </section>
     <div class="empty" id="empty">這一題還沒有人送出<small>打開街景開始找吧</small></div>
     <div class="grid" id="grid"></div>
     <div class="ticker" id="ticker" hidden aria-label="大家寫的感謝的話"><div class="track" id="track"></div></div>
@@ -254,7 +272,7 @@ const POINTS = Array.isArray(window.POINTS) ? window.POINTS : [5,4,3];
 const CORRECT_POINTS = Number(window.CORRECT_POINTS ?? 2);
 let reveal = 0;                          // 排行榜揭曉到第幾名（0 = 還沒揭曉，3 = 第一名也揭曉了）
 
-function makeCard(it, rank, elapsed){
+function makeCard(it, rank, elapsed, conceal){
   const c = document.createElement("article"); c.className = "card" + (rank && rank <= 3 ? " r"+rank : "");
   const hasImg = it.img && it.type !== "thanks";
   const rk = rank ? Object.assign(document.createElement("span"),{className: hasImg ? "rank" : "rank inline", textContent: "第 "+rank+" 名"}) : null;
@@ -280,7 +298,15 @@ function makeCard(it, rank, elapsed){
     const p=document.createElement("p"); p.textContent=it.thanks;
     q.append(to,p); tx.appendChild(q);
   }
-  if(it.type !== "thanks" && it.answer){ const a=document.createElement("p"); a.className="ans"; a.textContent=it.answer; tx.appendChild(a); }
+  /* 文字答案先收合（截圖就是證據，照抄答案也沒用）；答案揭曉時才直接攤開 */
+  if(it.type !== "thanks" && it.answer){
+    if(conceal){
+      const d=document.createElement("details"); d.className="ansd";
+      const sm=document.createElement("summary"); sm.textContent="看文字答案";
+      const a=document.createElement("p"); a.className="ans"; a.textContent=it.answer;
+      d.append(sm,a); tx.appendChild(d);
+    }else{ const a=document.createElement("p"); a.className="ans"; a.textContent=it.answer; tx.appendChild(a); }
+  }
   c.appendChild(tx);
   return c;
 }
@@ -304,7 +330,7 @@ function renderBanner(){
     $("bnTitle").textContent = m.title || "";
     ph.hidden = false;
     if(phase === "find"){
-      ph.textContent = "搶答中．找到就送出"; ph.classList.remove("thx");
+      ph.textContent = "搶答中．附截圖送出，對錯最後公布"; ph.classList.remove("thx");
       $("bnQ").textContent = m.question || ""; $("bnTo").textContent = ""; tm.hidden = true;
     }else{
       ph.textContent = "寫一句謝謝"; ph.classList.add("thx");
@@ -344,7 +370,7 @@ function renderRoster(){
   const rows = order.map(k=>{
     const t = tmap[k];
     const mine = items.filter(it=>(it.code || ("名:"+(it.name||""))) === k && Number(it.mission)===current);
-    const a = mine.some(it=>it.type!=="thanks" && (!isScored || it.correct==="O"));
+    const a = mine.some(it=>it.type!=="thanks");   // 有送出答案就打勾（對錯不在這裡透露）
     const thx = new Set(mine.filter(it=>it.type==="thanks").map(it=>(it.name||"").trim()));
     const size = Math.max(t.members.length, thx.size);
     if(a) nA++; nT += thx.size; nP += size;
@@ -362,7 +388,7 @@ function renderRoster(){
     li.append(n,a,t); ol.appendChild(li);
   });
   if(!rows.length){ const li=document.createElement("li"); li.className="rempty"; li.textContent="還沒有隊伍"; ol.appendChild(li); }
-  $("rTitle").textContent = current ? numText(current) + "各隊進度" + (isScored ? "．答對才打勾" : "") : "各隊進度";
+  $("rTitle").textContent = current ? numText(current) + "各隊進度" : "各隊進度";
   $("rA").textContent = nA; $("rT").textContent = nT + "/" + nP; $("rN").textContent = rows.length;
 }
 
@@ -373,12 +399,12 @@ function computeBoard(){
   items.forEach(it=>{ const k = keyOf(it); if(!tmap[k]){ tmap[k] = {key:k, team:it.team||it.name||"?", members:[], points:0, correct:0, firsts:0, rankSum:0, tsSum:0}; order.push(k); } });
   MS.forEach((m,i)=>{
     if(m.practice || !scored.includes(m.id)) return;
-    const seen = {};
-    items.filter(it=>it.type!=="thanks" && Number(it.mission)===i+1 && it.correct==="O")
+    let r = 0;
+    latestByTeam(i+1).filter(it=>it.correct==="O")
       .sort((a,b)=>(a.ts||0)-(b.ts||0))
       .forEach(it=>{
-        const k = keyOf(it); if(seen[k]) return; seen[k] = 1;
-        const r = Object.keys(seen).length, t = tmap[k];
+        const k = keyOf(it); r++;
+        const t = tmap[k];
         t.points += r <= POINTS.length ? POINTS[r-1] : CORRECT_POINTS;
         t.correct++; t.rankSum += r; t.tsSum += (it.ts||0); if(r === 1) t.firsts++;
       });
@@ -446,6 +472,31 @@ function renderTicker(){
   track.style.setProperty("--dur", Math.max(25, Math.round(chars * 0.28)) + "s");
 }
 
+/* 每隊在某一題「最後一次送出」的答案（以最後一次為準） */
+function latestByTeam(mission){
+  const last = {};
+  items.filter(it=>it.type!=="thanks" && Number(it.mission)===mission)
+    .sort((a,b)=>(a.ts||0)-(b.ts||0))
+    .forEach(it=>{ last[(it.code||it.name||"").trim()] = it; });
+  return Object.values(last);
+}
+/* 這一題的搶答結果。
+   搶答中：只列出哪些隊送出了（照送出先後，不顯示對錯）。
+   搶答結束：計分題只列答對的隊伍並排名；不計分題列出全部。 */
+function raceList(){
+  const m = MS[current-1] || {}, isScored = scored.includes(m.id);
+  const el = it => phase === "find" && phaseAt && it.ts ? Math.max(0, Math.round((it.ts - phaseAt)/1000)) : null;
+  if(!isScored){
+    const list = items.filter(it=>it.type!=="thanks" && Number(it.mission)===current).sort((a,b)=>(a.ts||0)-(b.ts||0));
+    return { label: "則投稿．這一題", shown: list.slice().reverse().map(it=>({it, elapsed: el(it)})) };
+  }
+  const latest = latestByTeam(current).sort((a,b)=>(a.ts||0)-(b.ts||0));
+  if(phase === "find") return { label: "隊已送出．這一題", shown: latest.map(it=>({it, elapsed: el(it)})) };
+  return { label: "隊答對．這一題", shown: latest.filter(it=>it.correct==="O").map((it,i)=>({it, rank:i+1})) };
+}
+/* 投稿卡片上的文字答案先收合；只有「答案揭曉」區直接攤開 */
+const isSecret = it => it.type !== "thanks";
+
 function render(){
   renderBanner();
   renderTicker();
@@ -461,19 +512,7 @@ function render(){
   }else if(view === "thanks"){
     shown = items.filter(it=>it.type==="thanks").slice().reverse().map(it=>({it})); label = "則感謝（全部題目）";
   }else if(phase === "find"){
-    const m = MS[current-1] || {}, isScored = scored.includes(m.id);
-    const seen = {};
-    const el = it => phaseAt && it.ts ? Math.max(0, Math.round((it.ts - phaseAt)/1000)) : null;
-    let list = items.filter(it=>it.type!=="thanks" && Number(it.mission)===current).sort((a,b)=>(a.ts||0)-(b.ts||0));
-    if(isScored){
-      shown = list.filter(it=>it.correct==="O")
-        .filter(it=>{ const k=(it.code||it.name||"").trim(); if(seen[k]) return false; seen[k]=1; return true; })
-        .map((it,i)=>({it, rank:i+1, elapsed: el(it)}));
-      label = "隊答對．這一題";
-    }else{
-      shown = list.slice().reverse().map(it=>({it, elapsed: el(it)}));
-      label = "則投稿．這一題";
-    }
+    ({shown, label} = raceList());
   }else{
     shown = items.filter(it=>it.type==="thanks" && Number(it.mission)===current).slice().reverse().map(it=>({it}));
     label = "則感謝．這一題";
@@ -482,11 +521,28 @@ function render(){
   $("total").textContent = shown.length;
   $("countLabel").textContent = current === 0 && view === "current" ? "則感謝已送達" : label;
   $("empty").hidden = shown.length > 0 || (current === 0 && view === "current");
-  $("empty").firstChild.textContent = view !== "current" ? "還沒有任何投稿" : phase === "find" ? (scored.includes((MS[current-1]||{}).id) ? "還沒有人答對" : "還沒有人送出") : "還沒有人送出感謝";
-  grid.replaceChildren(...shown.map(x=>{
-    const k = x.it.key + "|" + (x.rank||"") + "|" + (x.elapsed==null?"":x.elapsed);
-    return cards[k] || (cards[k] = makeCard(x.it, x.rank, x.elapsed));
-  }));
+  $("empty").querySelector("small").textContent = view === "current" && phase === "thanks" ? "寫一句謝謝，送出就會出現在這裡" : "打開街景開始找吧";
+  $("empty").firstChild.textContent = view !== "current" ? "還沒有任何投稿" : phase === "find" ? "還沒有人送出" : "還沒有人送出感謝";
+  const cardFor = (x, conceal) => {
+    const k = x.it.key + "|" + (x.rank||"") + "|" + (x.elapsed==null?"":x.elapsed) + "|" + (conceal?"s":"");
+    return cards[k] || (cards[k] = makeCard(x.it, x.rank, x.elapsed, conceal));
+  };
+  grid.replaceChildren(...shown.map(x=>cardFor(x, isSecret(x.it))));
+  /* 寫謝謝階段：上方揭曉這一題的答案 */
+  const rv = $("reveal"), showReveal = view === "current" && phase === "thanks" && current > 0 && current < BOARD;
+  rv.hidden = true;
+  if(showReveal){
+    const r = raceList();
+    if(r.shown.length){
+      rv.hidden = false;
+      const ordered = r.shown[0] && r.shown[0].rank ? r.shown : r.shown.slice().reverse();
+      $("revealGrid").replaceChildren(...ordered.slice(0, 8).map(x=>cardFor(x, false)));
+      $("revealMore").textContent = ordered.length > 8 ? "還有 " + (ordered.length - 8) + (r.shown[0].rank ? " 隊也答對了" : " 則投稿") : "";
+    }else if(scored.includes((MS[current-1]||{}).id)){
+      rv.hidden = false; $("revealGrid").replaceChildren();
+      $("revealMore").textContent = "這一題沒有隊伍答對。";
+    }
+  }
 }
 
 const queue = []; let busy = false;

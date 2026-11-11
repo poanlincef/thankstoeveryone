@@ -37,7 +37,7 @@ window.MISSIONS = [
     title: "校契的鐵門",
     question: "校契的鐵門是什麼顏色？",
     map: START_MAP,
-    photo: "optional",
+    photo: "required",
     hint: "先熟悉一下：打開街景、找到答案、回來送出。",
     thanksLead: "你今天是怎麼來到這裡的？",
     thanksTo: "邀請你、帶你來聚會的人"
@@ -47,7 +47,7 @@ window.MISSIONS = [
     title: "家齊看板下的人",
     question: "站在家齊高中校門口看板底下的人，穿什麼顏色的衣服？",
     map: START_MAP,
-    photo: "optional",
+    photo: "required",
     hint: "校門在健康路一段上。",
     thanksLead: "校門口總有人站著、等著。你也有一直在等你的人嗎？",
     thanksTo: "校門口的警衛、導護志工，或總是等你一起放學的朋友"
@@ -57,7 +57,7 @@ window.MISSIONS = [
     title: "南大附中的雙載阿伯",
     question: "南大附中「校門口的雙載」阿伯的機車是什麼顏色？",
     map: START_MAP,
-    photo: "optional",
+    photo: "required",
     hint: "校門在中山南路上，沿著校門口找找看。",
     thanksLead: "阿伯雙載著人到學校。你有沒有被誰載過、陪過一段上學的路？",
     thanksTo: "載過你、陪你走過上學路的人（家人、司機、同學、交通導護都可以）"
@@ -67,7 +67,7 @@ window.MISSIONS = [
     title: "南商對面的關東旗",
     question: "南商校門口對面的補習班，門口插了幾支關東旗？",
     map: START_MAP,
-    photo: "optional",
+    photo: "required",
     hint: "先站到南商校門口，再轉身看馬路對面。",
     thanksLead: "補習班門口好熱鬧。誰陪你撐過那些難懂的題目？",
     thanksTo: "補習班老師，或常常教你課業的同學"
@@ -77,7 +77,7 @@ window.MISSIONS = [
     title: "二中的榜單",
     question: "台南二中的周Ｏ盈同學，考上哪所大學？",
     map: START_MAP,
-    photo: "optional",
+    photo: "required",
     hint: "校門在北門路二段上，看看門口的紅榜。",
     thanksLead: "學長姐的名字掛在榜上。有沒有哪個學長姐給過你方向？",
     thanksTo: "帶過你、給你建議的學長姐"
@@ -87,7 +87,7 @@ window.MISSIONS = [
     title: "南女的馬賽克",
     question: "台南女中活動中心牆上的馬賽克拼貼，是什麼表情？",
     map: START_MAP,
-    photo: "optional",
+    photo: "required",
     hint: "沿著學校外圍的街道繞一圈，找活動中心的外牆。",
     thanksLead: "牆上的那張臉，讓你想起誰的表情？",
     thanksTo: "在你難過的時候陪著你、逗你笑的朋友"
